@@ -1,0 +1,143 @@
+{% extends 'layout.html' %}
+
+{% block title %}Administrar Usuarios{% endblock %}
+
+{% block content %}
+<div class="h-screen flex items-center justify-center bg-gray-100">
+    <div class="w-full max-w-4xl bg-white p-10 rounded-lg shadow-lg">
+        <h1 class="text-gray-800 font-bold text-2xl mb-6 text-center">Regístrate Ahora</h1>
+        <form action="{{ url_for('register') }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div>
+                <label for="dni" class="block text-gray-700 font-semibold mb-1">DNI:</label>
+                <input id="dni" name="dni" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" maxlength="8" oninput="traerDatos()" required />
+            </div>
+            
+            <div>
+                <label for="nombres" class="block text-gray-700 font-semibold mb-1">Nombres:</label>
+                <input id="nombres" name="nombres" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" value="{{ nombres }}" readonly required />
+            </div>
+            
+            <div>
+                <label for="apellido_paterno" class="block text-gray-700 font-semibold mb-1">Apellido Paterno:</label>
+                <input id="apellido_paterno" name="apellido_paterno" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" value="{{ apellido_paterno }}" readonly required />
+            </div>
+            
+            <div>
+                <label for="apellido_materno" class="block text-gray-700 font-semibold mb-1">Apellido Materno:</label>
+                <input id="apellido_materno" name="apellido_materno" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" value="{{ apellido_materno }}" readonly required />
+            </div>
+
+            <div>
+              <label for="username" class="block text-gray-700 font-semibold mb-1">Usuario:</label>
+              <input name="username" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" required />
+            </div>
+
+            <div>
+                <label for="password" class="block text-gray-700 font-semibold mb-1">Contraseña:</label>
+                <input name="password" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" required />
+            </div>
+            
+            <div>
+              <label for="role_id" class="block text-gray-700 font-semibold mb-1">Rol:</label>
+              <select name="role_id" id="role_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" required>
+                  {% for rol in roles %}
+                      <option value="{{ rol[0] }}">{{ rol[1] }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+          
+          <div>
+              <label for="area_id" class="block text-gray-700 font-semibold mb-1">Área:</label>
+              <select name="area_id" id="area_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500" required>
+                  {% for area in areas %}
+                      <option value="{{ area[0] }}">{{ area[1] }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+          
+
+            
+            <div class="md:col-span-2 flex justify-center">
+                <button type="submit" class="w-full md:w-1/2 bg-indigo-600 mt-5 py-2 rounded-lg text-white font-semibold">Registrar</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+      let timeout;
+    
+      function traerDatos() {
+        let dni = document.getElementById("dni").value;
+    
+        // Verificar si el campo DNI no está vacío antes de hacer la solicitud
+        if (dni.trim() === "") {
+          clearTimeout(timeout); // Si el campo está vacío, cancela cualquier búsqueda pendiente
+          return;
+        }
+    
+        // Cancelar la búsqueda anterior si el usuario sigue escribiendo
+        clearTimeout(timeout);
+    
+        // Establecer el tiempo de espera (debounce) antes de hacer la solicitud
+        timeout = setTimeout(function () {
+          // Mostrar mensaje de "cargando" mientras se espera
+          Swal.fire({
+            title: 'Cargando...',
+            text: 'Buscando datos...',
+            icon: 'info',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+    
+          // Realizar la consulta a la API
+          fetch("https://apiperu.dev/api/dni/" + dni + "?api_token=9387e2c01ca687dd819d169a4e6b2e2f1c6d1572f04496738ef8b4a1fe21af88")
+            .then((response) => response.json())
+            .then((datos) => {
+              if (datos.success) {
+                // Si la respuesta es exitosa, completar los campos
+                document.getElementById("nombres").value = datos.data.nombres;
+                document.getElementById("apellido_paterno").value = datos.data.apellido_paterno;
+                document.getElementById("apellido_materno").value = datos.data.apellido_materno;
+    
+                Swal.fire({
+                  title: 'Datos encontrados',
+                  text: 'El DNI es válido y los datos se han cargado correctamente.',
+                  icon: 'success',
+                  confirmButtonText: 'Aceptar'
+                });
+              } else {
+                // Si el DNI no es válido, mostrar el mensaje de error
+                Swal.fire({
+                  title: 'Error',
+                  text: 'DNI no válido o no encontrado. Por favor, revisa el número.',
+                  icon: 'error',
+                  confirmButtonText: 'Aceptar'
+                });
+              }
+            })
+            .catch((error) => {
+              // Manejo de errores en caso de que no se pueda realizar la solicitud
+              console.error("Error en la consulta de DNI:", error);
+              Swal.fire({
+                title: 'Error',
+                text: 'Hubo un problema al validar el DNI. Inténtalo nuevamente.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+              });
+            });
+        }, 1000); // Espera de 1 segundo después de que el usuario deja de escribir
+      }
+    
+      // Asociar la función con el evento 'input' del campo DNI
+      document.getElementById("dni").addEventListener("input", traerDatos);
+    </script>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    
+</div>
+{% endblock %}

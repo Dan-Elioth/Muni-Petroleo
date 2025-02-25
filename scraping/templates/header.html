@@ -1,0 +1,57 @@
+<header class="fixed top-0 left-0 w-full bg-blue-800 text-white flex items-center justify-between h-14 z-50 shadow-lg">
+    <!-- Logo y nombre de usuario -->
+    <div class="flex items-center pl-3 w-14 md:w-64 h-14">
+      <img
+        class="w-8 h-8 md:w-10 md:h-10 rounded-md mr-2"
+        src="https://therminic2018.eu/wp-content/uploads/2018/07/dummy-avatar.jpg"
+        alt="Avatar"
+      />
+      <span class="hidden md:block font-semibold">{{ current_user.username }}</span>
+    </div>
+  
+    <!-- Buscador y acciones -->
+    <div class="flex items-center h-full pr-4 space-x-6">
+      <!-- Buscador -->
+      <div class="bg-white text-black rounded-lg flex items-center px-3 py-1 shadow-sm border border-gray-300">
+        <button class="outline-none focus:outline-none">
+          <svg
+            class="w-5 h-5 text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </button>
+        <input
+          type="search"
+          placeholder="Buscar..."
+          class="w-full pl-2 text-sm bg-transparent outline-none placeholder-gray-500"
+        />
+      </div>
+  
+      <!-- Botón para cambiar tema -->
+      <button id="toggle-theme" class="hover:text-blue-300 transition-colors">
+        Cambiar Tema
+      </button>
+  
+      <!-- Logout con icono -->
+      <a href="{{ url_for('logout') }}" class="hover:text-blue-300 transition-colors flex items-center space-x-1">
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H9m4 8a8 8 0 110-16 8 8 0 010 16z"></path>
+        </svg>
+        <span>Logout</span>
+      </a>
+    </div>
+  </header>
+  
+  <!-- Ajustar el contenido principal para no quedar detrás del header -->
+  <div class="pt-14"></div>
+  

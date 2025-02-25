@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Noticias - Diario Sin Fronteras</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        .container-principal {
+            flex: 1;
+        }
+    </style>
+    <script>
+        function buscarNoticias() {
+            const searchQuery = document.getElementById('search').value;
+            const url = `/admin?search=${searchQuery}`;
+    
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('tablaNoticias').innerHTML = data;
+            });
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    <!-- Contenedor Principal -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Sidebar -->
+        <nav class="bg-blue-900 text-white w-full md:w-64 space-y-6 py-6 px-4 md:py-7 md:px-2">
+            <!-- Información del Usuario -->
+            <div class="text-center mb-6">
+                <p class="text-lg font-bold">Bienvenido,</p>
+                <p class="text-xl font-semibold">{{ current_user.username }}</p>
+                <p class="text-sm italic">Rol: 
+                    {% if current_user.role_id == 1 %} Administrador
+                    {% elif current_user.role_id == 2 %} Usuario Premium
+                    {% elif current_user.role_id == 3 %} Usuario Regular
+                    {% else %} Invitado
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Navegación -->
+            <ul class="mt-4 space-y-4">
+                <li>
+                    <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Inicio
+                    </a>
+                </li>
+                
+                {% if current_user.role_id in [1, 2, 3] %}
+                <li>
+                    <a href="/estadisticas" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Ver Estadísticas
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role_id in [1, 2, 3] %}
+                <li>
+                    <a href="/reportes" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Ver Reportes
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role_id == 1 %}
+                <li>
+                    <a href="/admin/approve_users" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-yellow-600">
+                        Aprobar Usuarios
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/manage_roles" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-yellow-600">
+                        Administrar Roles
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role_id in [1, 2, 3] %}
+                <li>
+                    <a href="/admin" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Administrador
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li>
+                    <a href="{{ url_for('logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-red-700 bg-red-500">
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        
+
+        <!-- Contenido Principal -->
+        <div class="flex-1 container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg container-principal">
+            
+            <!-- Botones de Estadísticas y Reportes -->
+
+            <!-- Título -->
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8">
+                Gestión de Noticias
+            </h2>
+
+            <!-- Búsqueda y Botón Agregar -->
+            <div class="flex flex-wrap justify-between items-center space-y-4 md:space-y-0">
+                
+                <!-- Formulario de Búsqueda -->
+                <form action="#" method="GET" class="flex items-center w-full md:w-2/3">
+                    <input type="text" id="search" name="search" placeholder="Buscar por título..." value="{{ search_query }}" class="flex-grow p-2 border border-gray-300 rounded-lg" oninput="buscarNoticias()">
+                </form>
+                
+                <!-- Botón Agregar Noticia (Visible solo para el rol 1) -->
+                {% if current_user.role_id == 1 %}
+                <a href="{{ url_for('nueva_noticia') }}" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 whitespace-nowrap text-center w-full md:w-auto">
+                    + Agregar Noticia
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Tabla de Noticias -->
+            <div id="tablaNoticias" class="mt-8">
+                {% include 'tabla_noticias.html' %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

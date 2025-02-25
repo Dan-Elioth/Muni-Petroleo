@@ -1,0 +1,159 @@
+{% extends 'layout.html' %}
+
+{% block title %}Registro de Combustible{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
+    <h2 class="text-2xl font-semibold text-gray-700 text-center">Registrar Combustible</h2>
+
+    <form method="POST" action="{{ url_for('registrar_combustible') }}" enctype="multipart/form-data" class="mt-6 space-y-4">
+        <!-- Usuario autenticado -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Usuario</label>
+            <input type="text" value="{{ current_user.id }}" disabled class="w-full p-2 border rounded-lg bg-gray-100">
+        </div>
+
+        <!-- Área -->
+        <div>
+            <label class="block font-medium">Área</label>
+<input type="text" value="{{ area_id if area_id else 'No asignado' }}" disabled class="w-full p-2 border rounded bg-gray-100">
+        </div>
+
+        <!-- Vehículo -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Vehículo</label>
+            <select name="vehiculo_id" required class="w-full p-2 border rounded-lg">
+                <option value="">Seleccione un vehículo</option>
+                {% for vehiculo in vehiculos %}
+                <option value="{{ vehiculo.id }}">{{ vehiculo.modelo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Selección de Reservas -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Reservas Disponibles</label>
+            <div id="reservas_container">
+                {% for reserva in reservas %}
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" name="reservas" value="{{ reserva.id }}" data-cantidad="{{ reserva.cantidad_disponible }}" class="reserva_checkbox">
+                    <label>{{ reserva.id }} - Cantidad Disponible: <span class="reserva_cantidad">{{ reserva.cantidad_disponible }}</span></label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Cantidad Total Disponible -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Cantidad Total Disponible</label>
+            <input type="text" id="cantidad_total_disponible" disabled class="w-full p-2 border rounded-lg bg-gray-100">
+        </div>
+
+        <!-- Cantidad Solicitada -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Cantidad Solicitada</label>
+            <input type="number" name="cantidad" id="cantidad_solicitada" step="0.01" required class="w-full p-2 border rounded-lg">
+        </div>
+
+        <!-- Resumen de distribución -->
+        <div id="resumen_distribucion" class="hidden p-4 bg-gray-100 rounded-lg">
+            <h3 class="text-lg font-medium text-gray-700">Distribución entre Reservas</h3>
+            <ul id="lista_resumen" class="text-sm text-gray-600"></ul>
+        </div>
+
+        <!-- Documento (Subir archivo) -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Documento</label>
+            <input type="file" name="documento_path" class="w-full p-2 border rounded-lg">
+        </div>
+
+        <!-- Comentario -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Comentario</label>
+            <textarea name="comentario" class="w-full p-2 border rounded-lg"></textarea>
+        </div>
+
+        <!-- Botón de enviar -->
+        <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">
+            Registrar Combustible
+        </button>
+    </form>
+</div>
+
+<!-- SweetAlert & Script -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const reservaCheckboxes = document.querySelectorAll(".reserva_checkbox");
+        const cantidadTotalDisponibleInput = document.getElementById("cantidad_total_disponible");
+        const cantidadSolicitadaInput = document.getElementById("cantidad_solicitada");
+        const submitBtn = document.getElementById("submitBtn");
+        const resumenDistribucion = document.getElementById("resumen_distribucion");
+        const listaResumen = document.getElementById("lista_resumen");
+
+        function actualizarCantidadTotal() {
+            let totalDisponible = 0;
+            reservaCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    totalDisponible += parseFloat(checkbox.getAttribute("data-cantidad"));
+                }
+            });
+            cantidadTotalDisponibleInput.value = totalDisponible;
+        }
+
+        function calcularDistribucion() {
+            let cantidadSolicitada = parseFloat(cantidadSolicitadaInput.value);
+            let cantidadRestante = cantidadSolicitada;
+            let reservasSeleccionadas = [];
+
+            reservaCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    let reservaID = checkbox.value;
+                    let cantidadDisponible = parseFloat(checkbox.getAttribute("data-cantidad"));
+
+                    let cantidadUsada = Math.min(cantidadRestante, cantidadDisponible);
+                    cantidadRestante -= cantidadUsada;
+
+                    reservasSeleccionadas.push({ id: reservaID, cantidad: cantidadUsada });
+
+                    if (cantidadRestante <= 0) {
+                        return;
+                    }
+                }
+            });
+
+            listaResumen.innerHTML = "";
+            reservasSeleccionadas.forEach(reserva => {
+                let listItem = document.createElement("li");
+                listItem.textContent = `Reserva ${reserva.id}: ${reserva.cantidad} litros`;
+                listaResumen.appendChild(listItem);
+            });
+
+            resumenDistribucion.classList.toggle("hidden", reservasSeleccionadas.length === 0);
+        }
+
+        reservaCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", () => {
+                actualizarCantidadTotal();
+                calcularDistribucion();
+            });
+        });
+
+        cantidadSolicitadaInput.addEventListener("input", calcularDistribucion);
+
+        submitBtn.addEventListener("click", function (event) {
+            const cantidadSolicitada = parseFloat(cantidadSolicitadaInput.value);
+            const cantidadTotalDisponible = parseFloat(cantidadTotalDisponibleInput.value);
+
+            if (cantidadSolicitada > cantidadTotalDisponible) {
+                event.preventDefault();
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "La cantidad solicitada es mayor a la suma de reservas seleccionadas.",
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

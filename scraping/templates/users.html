@@ -1,0 +1,136 @@
+{% extends 'layout.html' %}
+
+{% block title %}Administrar Usuarios{% endblock %}
+
+{% block content %}
+
+<div class="px-4 sm:px-10">
+<h1 class="text-2xl font-bold mb-6">Administrar Usuarios</h1>
+
+<div class="flex justify-end mb-6">
+    <a href="{{ url_for('register') }}" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition">
+        + Crear Usuario
+    </a>
+</div>
+
+<!-- Tabla de usuarios -->
+<table class="w-full border-collapse border border-gray-300 shadow-sm">
+    <thead>
+        <tr class="bg-blue-100 text-left">
+            <th class="p-3">ID</th>
+            <th class="p-3">Usuario</th>
+            <th class="p-3">Nombre</th>
+            <th class="p-3">Apellido Paterno</th>
+            <th class="p-3">Apellido Materno</th>
+            <th class="p-3">Rol</th>
+            <th class="p-3">Área</th>
+            <th class="p-3">Estado</th>
+            <th class="p-3">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr class="hover:bg-gray-100">
+            <td class="p-3">{{ usuario[0] }}</td>
+            <td class="p-3">{{ usuario[1] }}</td>
+            <td class="p-3">{{ usuario[2] }}</td>
+            <td class="p-3">{{ usuario[3] }}</td>
+            <td class="p-3">{{ usuario[4] }}</td>
+            <td class="p-3">{{ usuario[8] }}</td> <!-- Nombre del rol -->
+            <td class="p-3">{{ usuario[9] }}</td> <!-- Nombre del área -->
+
+            <!-- Mostrar estado como "Activo" o "Inactivo" -->
+            <td class="p-3">
+                {% if usuario[7] == 1 %}
+                    <span class="text-green-600 font-semibold">Activo</span>
+                {% else %}
+                    <span class="text-red-600 font-semibold">Inactivo</span>
+                {% endif %}
+            </td>
+
+            <!-- Botones de acción -->
+            <td class="p-3 flex gap-2">
+                <button onclick="abrirModalEditar(decodeURIComponent('{{ usuario | tojson | safe | urlencode }}'))" 
+                        class="bg-yellow-500 text-white px-4 py-1 rounded-lg hover:bg-yellow-600 transition">Editar
+                </button>
+
+                <form action="{{ url_for('cambiar_estado_usuario') }}" method="POST" class="inline">
+                    <input type="hidden" name="user_id" value="{{ usuario[0] }}">
+                    <input type="hidden" name="nuevo_estado" value="{% if usuario[7] == 1 %}0{% else %}1{% endif %}">
+                    <button type="submit" onclick="return confirm('¿Seguro que deseas {% if usuario[7] == 1 %}desactivar{% else %}activar{% endif %} este usuario?');" 
+                            class="bg-blue-500 text-white px-4 py-1 rounded-lg hover:bg-blue-600 transition">
+                        {% if usuario[7] == 1 %} Desactivar {% else %} Activar {% endif %}
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal de edición -->
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg w-full max-w-2xl">
+        <h2 class="text-xl font-bold mb-6">Editar Usuario</h2>
+        <form id="formEditar" action="{{ url_for('actualizar_usuario') }}" method="POST">
+
+            <input type="hidden" name="user_id" id="edit_user_id">
+
+            <label class="block mb-2">Usuario:</label>
+            <input type="text" name="username" id="edit_username" class="border p-2 w-full mb-4 rounded-lg" required>
+
+            <label class="block mb-2">Nombre:</label>
+            <input type="text" name="nombres" id="edit_nombres" class="border p-2 w-full mb-4 rounded-lg" required>
+
+            <label class="block mb-2">Apellido Paterno:</label>
+            <input type="text" name="apellido_paterno" id="edit_apellido_paterno" class="border p-2 w-full mb-4 rounded-lg" required>
+
+            <label class="block mb-2">Apellido Materno:</label>
+            <input type="text" name="apellido_materno" id="edit_apellido_materno" class="border p-2 w-full mb-4 rounded-lg">
+
+            <label class="block mb-2">Rol:</label>
+            <select name="rol" id="edit_rol" class="border p-2 w-full mb-4 rounded-lg" required>
+                {% for rol in roles %}
+                    <option value="{{ rol[0] }}">{{ rol[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="block mb-2">Área:</label>
+            <select name="area" id="edit_area" class="border p-2 w-full mb-4 rounded-lg" required>
+                {% for area in areas %}
+                    <option value="{{ area[0] }}">{{ area[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <div class="flex justify-end gap-4 mt-4">
+                <button type="button" onclick="cerrarModal()" class="bg-gray-400 px-4 py-2 rounded-lg hover:bg-gray-500 transition">Cancelar</button>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts para el modal -->
+<script>
+    function abrirModalEditar(usuarioJson) {
+        const usuario = JSON.parse(usuarioJson);
+
+        document.getElementById('edit_user_id').value = usuario[0];
+        document.getElementById('edit_username').value = usuario[1];
+        document.getElementById('edit_nombres').value = usuario[2];
+        document.getElementById('edit_apellido_paterno').value = usuario[3];
+        document.getElementById('edit_apellido_materno').value = usuario[4];
+
+        document.getElementById('edit_rol').value = usuario[5];
+        document.getElementById('edit_area').value = usuario[6];
+
+        document.getElementById('modalEditar').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalEditar').classList.add('hidden');
+    }
+</script>
+</div>
+
+{% endblock %}

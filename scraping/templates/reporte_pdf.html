@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Noticias</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 12px;
+        }
+        td {
+            font-size: 11px;
+            word-wrap: break-word;
+        }
+        .small-text {
+            font-size: 10px;
+        }
+        .report-header {
+            margin-bottom: 20px;
+        }
+        .report-header p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <h1>Reporte de Noticias</h1>
+        <p><strong>Rango de Fechas:</strong> {{ fecha_inicio }} - {{ fecha_fin }}</p>
+        {% if categoria %}
+            <p><strong>Categoría (Source):</strong> {{ categoria }}</p>
+        {% endif %}
+        {% if diario %}
+            <p><strong>Diario:</strong> {{ diario }}</p>
+        {% endif %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Fecha</th>
+                <th>Fuente</th>
+                <th>Categoría</th>
+                <th>Resumen</th>
+                <th>Diario</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for noticia in noticias %}
+            <tr>
+                <td class="small-text">{{ noticia[0] }}</td>
+                <td class="small-text">{{ noticia[1] }}</td>
+                <td class="small-text">{{ noticia[2] }}</td>
+                <td class="small-text">{{ noticia[5] }}</td>
+                <td class="small-text">{{ noticia[7] }}</td>
+                <td class="small-text">{{ noticia[3] }}</td>
+                <td class="small-text">{{ noticia[9] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

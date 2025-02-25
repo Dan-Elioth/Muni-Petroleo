@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes de Noticias</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Sidebar -->
+    <div class="flex min-h-screen">
+        <nav class="bg-blue-900 text-white w-full md:w-64 space-y-6 py-6 px-4 md:py-7 md:px-2">
+            <!-- Información del Usuario -->
+            <div class="text-center mb-6">
+                <p class="text-lg font-bold">Bienvenido,</p>
+                <p class="text-xl font-semibold">{{ current_user.username }}</p>
+                <p class="text-sm italic">Rol: 
+                    {% if current_user.role_id == 1 %} Administrador
+                    {% elif current_user.role_id == 2 %} Usuario Premium
+                    {% elif current_user.role_id == 3 %} Usuario Regular
+                    {% else %} Invitado
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Navegación -->
+            <ul class="mt-4 space-y-4">
+                <li>
+                    <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Inicio
+                    </a>
+                </li>
+                
+                {% if current_user.role_id in [1, 2, 3] %}
+                <li>
+                    <a href="/estadisticas" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Ver Estadísticas
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role_id in [1, 2, 3] %}
+                <li>
+                    <a href="/reportes" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                        Ver Reportes
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li>
+                    <a href="{{ url_for('logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-red-700 bg-red-500">
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
+            <h2 class="text-4xl font-bold text-center mb-8">Seleccionar Rango de Fechas, Diario y Categoría</h2>
+    
+            <!-- Botones para descargar CSV o PDF en la parte superior -->
+            <div class="flex justify-center mb-4">
+                <a href="/descargar_reporte_csv?fecha_inicio={{ request.form['fecha_inicio'] }}&fecha_fin={{ request.form['fecha_fin'] }}&diario={{ request.form['diario'] }}&categoria={{ request.form['categoria'] }}" 
+                   class="bg-green-500 text-white py-2 px-5 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                   Descargar CSV
+                </a>               
+                <a href="/descargar_pdf?fecha_inicio={{ request.form['fecha_inicio'] }}&fecha_fin={{ request.form['fecha_fin'] }}&diario={{ request.form['diario'] }}&categoria={{ request.form['categoria'] }}" 
+                   class="bg-red-500 text-white py-2 px-5 rounded hover:bg-red-700 ml-4">
+                   Descargar PDF
+                </a>
+            </div>
+    
+            <!-- Formulario para seleccionar rango de fechas, diario y categoría -->
+            <form method="POST" action="/reportes">
+                <div class="flex justify-center space-x-4 mb-4">
+                    <!-- Fecha Inicio -->
+                    <div>
+                        <label for="fecha_inicio" class="block text-lg font-semibold mb-2">Fecha Inicio:</label>
+                        <input type="date" id="fecha_inicio" name="fecha_inicio" class="p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <!-- Fecha Fin -->
+                    <div>
+                        <label for="fecha_fin" class="block text-lg font-semibold mb-2">Fecha Fin:</label>
+                        <input type="date" id="fecha_fin" name="fecha_fin" class="p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <!-- Categoría -->
+                    <div>
+                        <label for="categoria" class="block text-lg font-semibold mb-2">Categoría:</label>
+                        <select id="categoria" name="categoria" class="p-2 border border-gray-300 rounded-lg">
+                            <option value="">Todas las categorías</option>
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria }}">{{ categoria }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Diario -->
+                    <div>
+                        <label for="diario" class="block text-lg font-semibold mb-2">Diario:</label>
+                        <select id="diario" name="diario" class="p-2 border border-gray-300 rounded-lg">
+                            <option value="">Todos los diarios</option>
+                            {% for diario in diarios %}
+                                {% if current_user.role_id == 3 %}
+                                    {% if diario in ['Diario Sin Fronteras', 'Diario Correo'] %}
+                                        <option value="{{ diario }}">{{ diario }}</option>
+                                    {% endif %}
+                                {% else %}
+                                    <option value="{{ diario }}">{{ diario }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            
+                <!-- Botón para generar reporte -->
+                <div class="flex justify-center">
+                    <button type="submit" class="bg-blue-500 text-white py-2 px-5 rounded hover:bg-blue-700">
+                        Generar Reporte
+                    </button>
+                </div>
+            </form>
+            
+    
+            <!-- Tabla de noticias si se han seleccionado -->
+            {% if noticias %}
+                <h3 class="text-2xl font-semibold mt-8">Noticias Encontradas:</h3>
+                <table class="table-auto w-full mt-4">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">ID</th>
+                            <th class="px-4 py-2">Título</th>
+                            <th class="px-4 py-2">Fecha</th>
+                            <th class="px-4 py-2">Fuente</th>
+                            <th class="px-4 py-2">Categoría</th>
+                            <th class="px-4 py-2">Resumen</th>
+                            <th class="px-4 py-2">Diario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for noticia in noticias %}
+                            <tr>
+                                <td class="border px-4 py-2">{{ noticia[0] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[1] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[2] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[5] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[7] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[3] }}</td>
+                                <td class="border px-4 py-2">{{ noticia[9] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

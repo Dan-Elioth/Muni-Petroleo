@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal de Noticias - Noticias de Tesla</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .news-card:hover {
+        transform: scale(1.02);
+        transition: transform 0.3s ease-in-out;
+      }
+      .category-card:hover {
+        background-color: #f0f0f0;
+        transition: background-color 0.3s ease-in-out;
+      }
+      .badge {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        background-color: #3490dc;
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <!-- Header de El Peruano -->
+    <header class="bg-blue-800 text-white py-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Tesla</h1>
+        <nav>
+          <a href="{{ url_for('inicio') }}" class="text-lg hover:underline">Inicio</a>
+          <a href="{{ url_for('diario_correo') }}" class="ml-4 text-lg hover:underline">Diario Correo</a>
+          <a href="{{ url_for('diario_sin_fronteras') }}" class="ml-4 text-lg hover:underline">Diario Sin Fronteras</a>
+          <a href="{{ url_for('diario_el_peruano') }}" class="ml-4 text-lg hover:underline">El Peruano</a>
+          <a href="{{ url_for('tesla') }}" class="ml-4 text-lg hover:underline">Noticias de Tesla</a>
+
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('admin_page') }}" class="ml-4 text-lg hover:underline text-yellow-400 font-bold">
+              Administrador
+            </a>
+          {% endif %}
+
+          {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('login') }}" class="ml-4 text-lg hover:underline bg-blue-600 px-4 py-2 rounded text-white">
+              Login
+            </a>
+          {% else %}
+            <a href="{{ url_for('logout') }}" class="ml-4 text-lg hover:underline bg-red-600 px-4 py-2 rounded text-white">
+              Logout
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <div class="container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-4xl font-bold text-center mb-8">Noticias de Tesla</h2>
+
+      <!-- Sección de Noticias de Tesla desde la API -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for noticia in noticias %}
+        <div class="news-card relative bg-white rounded-lg shadow-md hover:shadow-xl p-6 transform transition-all">
+          <img
+            src="{{ noticia['urlToImage'] or 'https://via.placeholder.com/300' }}"
+            alt="Imagen de la noticia"
+            class="w-full h-48 object-cover rounded-lg mb-4"
+          />
+          <h2 class="text-xl font-semibold text-blue-700 mb-2">
+            <a href="{{ noticia['url'] }}" target="_blank" class="hover:underline">
+              {{ noticia['title'] }}
+            </a>
+          </h2>
+          <p class="text-gray-500 mb-2"><strong>Fecha:</strong> {{ noticia['publishedAt'] }}</p>
+          <p class="text-gray-700">{{ noticia['description'] }}</p>
+          <p class="text-gray-600 mt-2"><strong>Fuente:</strong> {{ noticia['source']['name'] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-blue-800 text-white py-6 mt-8">
+      <div class="container mx-auto text-center">
+        <p>&copy; 2024 Noticias de Tesla. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,200 @@
+{% extends 'layout.html' %}
+
+{% block title %}Administrar Reservas de Combustible{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-10">
+
+<h1 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Administrar Reservas de Combustible</h1>
+
+<!-- Botón para abrir el modal de creación -->
+<div class="flex justify-end mb-6">
+    <button onclick="abrirModalCrear()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition duration-300 text-lg">➕ Nueva Reserva</button>
+</div>
+
+<!-- Tabla de reservas -->
+<div class="overflow-x-auto">
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-blue-500 text-white">
+            <tr>
+                <th class="py-3 px-6 text-left">ID</th>
+                <th class="py-3 px-6 text-left">Área</th>
+                <th class="py-3 px-6 text-left">Mes</th>
+                <th class="py-3 px-6 text-left">Año</th>
+                <th class="py-3 px-6 text-left">Cantidad Total</th>
+                <th class="py-3 px-6 text-left">Cantidad Disponible</th>
+                <th class="py-3 px-6 text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reserva in reservas %}
+            <tr class="border-b hover:bg-blue-50">
+                <td class="py-4 px-6">{{ reserva[0] }}</td>
+                <td class="py-4 px-6">{{ reserva[1] }}</td>
+                <td class="py-4 px-6">{{ reserva[2] }}</td>
+                <td class="py-4 px-6">{{ reserva[3] }}</td>
+                <td class="py-4 px-6">{{ reserva[4] }}</td>
+                <td class="py-4 px-6">{{ reserva[5] }}</td>
+                <td class="py-4 px-6 flex justify-center gap-4">
+                    <!-- Botón para abrir el modal de edición -->
+                    <button onclick="abrirModalEditar(this)" 
+                    data-id="{{ reserva[0] }}" 
+                    data-area_id="{{ reserva[6] }}" 
+                    data-mes="{{ reserva[2] }}" 
+                    data-year="{{ reserva[3] }}" 
+                    data-cantidad_total="{{ reserva[4] }}" 
+                    data-cantidad_disponible="{{ reserva[5] }}"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow text-lg">
+                    ✏️ Editar
+                </button>
+                
+                    
+                    <!-- Formulario para eliminar -->
+                    <form action="{{ url_for('eliminar_reserva', id=reserva[0]) }}" method="POST" class="inline">
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg" 
+                            onclick="return confirm('¿Seguro que deseas eliminar esta reserva?');">🗑️ Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal de Crear Reserva -->
+<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-6">Crear Nueva Reserva</h2>
+
+        <form action="{{ url_for('crear_reserva') }}" method="POST">
+            <label for="crearAreaId" class="block mb-2 font-semibold">Área:</label>
+            <select name="area_id" id="crearAreaId" class="border p-3 w-full rounded-lg mb-4" required>
+                {% for area in areas %}
+                    <option value="{{ area[0] }}">{{ area[1] }}</option>
+                {% endfor %}
+            </select>
+
+        
+            <label for="mes" class="block mb-2 font-semibold">Mes:</label>
+            <input type="number" name="mes" id="mes" min="1" max="12" class="border p-3 w-full rounded-lg mb-4" required>
+        
+            <label for="year" class="block mb-2 font-semibold">Año:</label>
+            <input type="number" name="year" id="year" min="2000" max="2100" class="border p-3 w-full rounded-lg mb-4" required>
+        
+            <label for="cantidad_total" class="block mb-2 font-semibold">Cantidad Total:</label>
+            <input type="number" step="0.01" name="cantidad_total" id="cantidad_total" class="border p-3 w-full rounded-lg mb-4" required>
+        
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Guardar</button>
+            </div>
+        </form>
+        
+    </div>
+</div>
+
+
+<!-- Modal de Editar Reserva -->
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-6">Editar Reserva</h2>
+
+        <form id="formEditar" method="POST">
+            <!-- ID oculto -->
+            <input type="hidden" name="reserva_id" id="editarReservaId">
+
+            <!-- Selección del Área -->
+            <!-- Selección del Área (Modal Editar) -->
+            <label for="editarAreaId" class="block mb-2 font-semibold">Área:</label>
+            <select name="area_id" id="editarAreaId" class="border p-3 w-full rounded-lg mb-4" required>
+                {% for area in areas %}
+                    <option value="{{ area[0] }}">{{ area[1] }}</option>
+                {% endfor %}
+            </select>
+
+
+            <!-- Mes -->
+            <label class="block mb-2 font-semibold">Mes:</label>
+            <input type="number" name="mes" id="editarMes" min="1" max="12" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <!-- Año -->
+            <label class="block mb-2 font-semibold">Año:</label>
+            <input type="number" name="year" id="editarYear" min="2000" max="2100" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <!-- Cantidad Total -->
+            <label class="block mb-2 font-semibold">Cantidad Total:</label>
+            <input type="number" step="0.01" name="cantidad_total" id="editarCantidadTotal" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <!-- Cantidad Disponible -->
+            <label class="block mb-2 font-semibold">Cantidad Disponible:</label>
+            <input type="number" step="0.01" name="cantidad_disponible" id="editarCantidadDisponible" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <!-- Botones -->
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Scripts para controlar los modales -->
+<script>
+// Función para abrir el modal de creación
+function abrirModalCrear() {
+    document.getElementById('modalCrear').classList.remove('hidden');
+}
+
+// Función para cerrar el modal de creación y limpiar el formulario
+function cerrarModalCrear() {
+    document.getElementById('modalCrear').classList.add('hidden');
+    document.querySelector('#modalCrear form').reset();
+}
+
+// Función para abrir el modal de edición con los datos correctos
+function abrirModalEditar(button) {
+    // Limpia el formulario antes de llenarlo
+    const formEditar = document.querySelector('#formEditar');
+    formEditar.reset();
+
+    // Obtiene los atributos del botón
+    const reserva = {
+        id: button.getAttribute('data-id'),
+        area_id: button.getAttribute('data-area_id'),
+        mes: button.getAttribute('data-mes'),
+        year: button.getAttribute('data-year'),
+        cantidad_total: button.getAttribute('data-cantidad_total'),
+        cantidad_disponible: button.getAttribute('data-cantidad_disponible')
+    };
+
+    // Llena los campos del formulario
+    document.getElementById('editarReservaId').value = reserva.id;
+    document.getElementById('editarMes').value = reserva.mes;
+    document.getElementById('editarYear').value = reserva.year;
+    document.getElementById('editarCantidadTotal').value = reserva.cantidad_total;
+    document.getElementById('editarCantidadDisponible').value = reserva.cantidad_disponible;
+
+    // Seleccionar el área correcta en el `select`
+    const areaSelect = document.getElementById('editarAreaId');
+    Array.from(areaSelect.options).forEach(option => {
+        option.selected = option.value === reserva.area_id;
+    });
+
+    // Actualizar el action del formulario
+    formEditar.action = `/reservas/editar/${reserva.id}`;
+
+    // Muestra el modal
+    document.getElementById('modalEditar').classList.remove('hidden');
+}
+
+// Función para cerrar el modal de edición y limpiar el formulario
+function cerrarModalEditar() {
+    document.getElementById('modalEditar').classList.add('hidden');
+    document.querySelector('#formEditar').reset();
+}
+
+</script>
+
+</div>
+{% endblock %}

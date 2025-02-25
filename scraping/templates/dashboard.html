@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Dashboard - Alquileres</h1>
+
+        <!-- Métricas clave -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-white shadow-md rounded-lg p-4">
+                <h2 class="text-xl font-semibold">Total Ingresos</h2>
+                <p class="text-2xl font-bold text-green-600">{{ total_ingresos }}</p>
+            </div>
+            <div class="bg-white shadow-md rounded-lg p-4">
+                <h2 class="text-xl font-semibold">Total Alquileres</h2>
+                <p class="text-2xl font-bold text-blue-600">{{ total_alquileres }}</p>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="mb-8 grid grid-cols-4 gap-4">
+            <div>
+                <label for="categoria" class="block text-sm font-medium text-gray-700">Categoría</label>
+                <select id="categoria" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                    <option value="">Todas</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.categoria }}">{{ categoria.categoria }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="anio" class="block text-sm font-medium text-gray-700">Año</label>
+                <select id="anio" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                    <option value="">Todos</option>
+                    {% for anio in anios %}
+                    <option value="{{ anio.anio }}">{{ anio.anio }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="tienda" class="block text-sm font-medium text-gray-700">Tienda</label>
+                <select id="tienda" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                    <option value="">Todas</option>
+                    {% for tienda in tiendas %}
+                    <option value="{{ tienda.ciudad }}">{{ tienda.ciudad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="activo" class="block text-sm font-medium text-gray-700">Cliente Activo</label>
+                <select id="activo" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm">
+                    <option value="">Todos</option>
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Ingresos por tienda -->
+            <div class="bg-white p-4 shadow-md rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Ingresos por Tienda</h2>
+                <canvas id="ingresosPorTienda"></canvas>
+            </div>
+
+            <!-- Ingresos por categoría -->
+            <div class="bg-white p-4 shadow-md rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Ingresos por Categoría</h2>
+                <canvas id="ingresosPorCategoria"></canvas>
+            </div>
+
+            <!-- Ingresos por año -->
+            <div class="bg-white p-4 shadow-md rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Ingresos por Año</h2>
+                <canvas id="ingresosPorAnio"></canvas>
+            </div>
+
+            <!-- Top 5 clientes -->
+            <div class="bg-white p-4 shadow-md rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Top 5 Clientes</h2>
+                <canvas id="topClientes"></canvas>
+            </div>
+        </div>
+        
+
+        <!-- Ingresos por país -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4">Ingresos por País</h2>
+            <canvas id="ingresosPorPais" class="bg-white p-4 shadow-md rounded-lg"></canvas>
+        </div>
+    </div>
+
+    <script>
+                // Inicializar gráficos
+        const ingresosPorTiendaChart = new Chart(document.getElementById('ingresosPorTienda').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [], 
+                datasets: [{ 
+                    label: 'Ingresos por Tienda', 
+                    data: [], 
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)', 
+                    borderColor: 'rgba(75, 192, 192, 1)', 
+                    borderWidth: 1 
+                }]
+            },
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true } 
+                } 
+            }
+        });
+
+        const ingresosPorCategoriaChart = new Chart(document.getElementById('ingresosPorCategoria').getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: [], 
+                datasets: [{
+                    label: 'Ingresos por Categoría',
+                    data: [],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        const ingresosPorAnioChart = new Chart(document.getElementById('ingresosPorAnio').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Ingresos por Año',
+                    data: [],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    fill: true
+                }]
+            },
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true } 
+                } 
+            }
+        });
+
+        const topClientesChart = new Chart(document.getElementById('topClientes').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Top Clientes',
+                    data: [],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true } 
+                } 
+            }
+        });
+
+        const ingresosPorPaisChart = new Chart(document.getElementById('ingresosPorPais').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Ingresos por País',
+                    data: [],
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                scales: { 
+                    y: { beginAtZero: true } 
+                } 
+            }
+        });
+
+        // Función para actualizar gráficos
+        function actualizarGrafico(chart, data, labels, datasetLabel) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.data.datasets[0].label = datasetLabel || chart.data.datasets[0].label;
+            chart.update();
+        }
+
+        // Manejar eventos de cambio de filtros
+        document.querySelectorAll('#categoria, #anio, #tienda, #activo').forEach(el => {
+            el.addEventListener('change', () => {
+                const categoria = document.getElementById('categoria').value;
+                const anio = document.getElementById('anio').value;
+                const tienda = document.getElementById('tienda').value;
+                const activo = document.getElementById('activo').value;
+
+                fetch('/filtrar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ categoria, anio, tienda, activo })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar todos los gráficos con los datos filtrados
+                    actualizarGrafico(ingresosPorTiendaChart, 
+                        data.ingresos_por_tienda.map(item => parseFloat(item.ingresos)), 
+                        data.ingresos_por_tienda.map(item => item.tienda),
+                        'Ingresos por Tienda'
+                    );
+
+                    actualizarGrafico(ingresosPorCategoriaChart, 
+                        data.ingresos_por_categoria.map(item => parseFloat(item.ingresos)), 
+                        data.ingresos_por_categoria.map(item => item.categoria),
+                        'Ingresos por Categoría'
+                    );
+
+                    actualizarGrafico(ingresosPorAnioChart, 
+                        data.ingresos_por_anio.map(item => parseFloat(item.ingresos)), 
+                        data.ingresos_por_anio.map(item => item.anio),
+                        'Ingresos por Año'
+                    );
+
+                    actualizarGrafico(topClientesChart, 
+                        data.top_clientes.map(item => parseFloat(item.ingresos)), 
+                        data.top_clientes.map(item => item.cliente),
+                        'Top Clientes'
+                    );
+
+                    actualizarGrafico(ingresosPorPaisChart, 
+                        data.ingresos_por_pais.map(item => parseFloat(item.ingresos)), 
+                        data.ingresos_por_pais.map(item => item.pais),
+                        'Ingresos por País'
+                    );
+                });
+            });
+        });
+
+        
+    </script>
+
+</body>
+</html>

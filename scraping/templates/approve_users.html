@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios Pendientes de Aprobación</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <!-- Sidebar -->
+  <div class="flex min-h-screen">
+    <nav class="bg-blue-900 text-white w-full md:w-64 space-y-6 py-6 px-4 md:py-7 md:px-2">
+      <!-- Información del Usuario -->
+      <div class="text-center mb-6">
+        <p class="text-lg font-bold">Bienvenido,</p>
+        <p class="text-xl font-semibold">{{ current_user.username }}</p>
+        <p class="text-sm italic">
+          Rol: 
+          {% if current_user.role_id == 1 %} Administrador
+          {% elif current_user.role_id == 2 %} Usuario Premium
+          {% elif current_user.role_id == 3 %} Usuario Regular
+          {% else %} Invitado
+          {% endif %}
+        </p>
+      </div>
+
+      <!-- Navegación -->
+      <ul class="mt-4 space-y-4">
+        <li>
+          <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">Inicio</a>
+        </li>
+        {% if current_user.role_id in [1, 2, 3] %}
+        <li>
+          <a href="/estadisticas" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">Ver Estadísticas</a>
+        </li>
+        <li>
+          <a href="/reportes" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">Ver Reportes</a>
+        </li>
+        {% endif %}
+        {% if current_user.role_id == 1 %}
+        <li>
+          <a href="/admin" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">Administrador</a>
+        </li>
+        {% endif %}
+        <li>
+          <a href="{{ url_for('logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-red-700 bg-red-500">Logout</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-1 bg-white p-6">
+      <h1 class="text-3xl font-bold mb-6">Usuarios Pendientes de Aprobación</h1>
+      
+      <form method="POST" action="/admin/approve_users">
+        <table class="table-auto w-full bg-gray-100 shadow-md rounded-lg border border-gray-200">
+          <thead>
+            <tr class="bg-blue-900 text-white">
+              <th class="px-4 py-2 text-left">ID</th>
+              <th class="px-4 py-2 text-left">Nombre de Usuario</th>
+              <th class="px-4 py-2 text-left">Comprobante</th>
+              <th class="px-4 py-2 text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr class="bg-white hover:bg-gray-100 transition">
+              <td class="border px-4 py-2">{{ user[0] }}</td>
+              <td class="border px-4 py-2">{{ user[1] }}</td>
+              <td class="border px-4 py-2 text-center">
+                {% if user[2] %}
+                  <a href="{{ url_for('uploaded_file', filename=user[2]) }}" target="_blank" class="text-blue-500 underline">Ver Comprobante</a>
+                {% else %}
+                  <span class="text-gray-500">No Disponible</span>
+                {% endif %}
+              </td>
+              <td class="border px-4 py-2 text-center">
+                <button 
+                  type="submit" 
+                  name="user_id" 
+                  value="{{ user[0] }}" 
+                  class="bg-green-500 text-white py-1 px-4 rounded hover:bg-green-700 transition"
+                >
+                  Aprobar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

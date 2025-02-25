@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Noticias de Tesla</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <script>
+      async function filtrarNoticias() {
+        const titulo = document.getElementById("buscar-titulo").value;
+        const fecha = document.getElementById("buscar-fecha").value;
+
+        const url = `/api/filtrar_noticias?titulo=${encodeURIComponent(titulo)}&fecha=${encodeURIComponent(fecha)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        actualizarNoticias(data.noticias);
+      }
+
+      function actualizarNoticias(noticias) {
+        const noticiasContainer = document.getElementById("noticias-container");
+        noticiasContainer.innerHTML = "";
+
+        if (noticias.length > 0) {
+          noticias.forEach((noticia) => {
+            const noticiaHtml = `
+              <div class="news-card relative bg-white rounded-lg shadow-md hover:shadow-xl p-6 transform transition-all">
+                ${noticia.url_imagen ? `<img src="${noticia.url_imagen}" alt="Imagen de la noticia" class="w-full h-48 object-cover rounded-lg mb-4" />` : ""}
+                <h2 class="text-xl font-semibold text-blue-700 mb-2">
+                  <a href="${noticia.url}" target="_blank" class="hover:underline">${noticia.titulo}</a>
+                </h2>
+                <p class="text-gray-500 mb-2">
+                  <strong>Fecha:</strong> ${noticia.fecha_publicacion}
+                </p>
+                <p class="text-gray-700">${noticia.descripcion}</p>
+                <p class="text-gray-600 mt-2"><strong>Fuente:</strong> ${noticia.fuente}</p>
+              </div>`;
+            noticiasContainer.innerHTML += noticiaHtml;
+          });
+        } else {
+          noticiasContainer.innerHTML = `<p class="text-center text-red-500 text-xl">No se encontraron noticias.</p>`;
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-gray-50 text-gray-900" onload="filtrarNoticias()">
+    <header class="bg-blue-800 text-white py-4">
+        <div class="container mx-auto flex justify-between items-center">
+          <h1 class="text-3xl font-bold">Portal de Noticias - Noticias Tesla</h1>
+          <nav>
+            <a href="{{ url_for('inicio') }}" class="text-lg hover:underline">Inicio</a>
+          
+            {% if current_user.is_authenticated %}
+              <!-- Acceso a Diario Correo para roles 1, 2 y 3 -->
+              {% if current_user.role_id in [1, 2, 3] %}
+                <a href="{{ url_for('diariocorreo') }}" class="ml-4 text-lg hover:underline">Diario Correo</a>
+              {% else %}
+                <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Correo (Acceso Restringido)</span>
+              {% endif %}
+          
+              <!-- Acceso a Tesla para roles 1 y 2 -->
+              {% if current_user.role_id in [1, 2] %}
+                <a href="{{ url_for('noticias_tesla') }}" class="ml-4 text-lg hover:underline">Noticias de Tesla</a>
+              {% else %}
+                <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Tesla (Acceso Restringido)</span>
+              {% endif %}
+  
+              <!-- Acceso a Tesla para roles 1 y 2 -->
+              {% if current_user.role_id in [1, 2] %}
+                <a href="{{ url_for('noticias_apple') }}" class="ml-4 text-lg hover:underline">Noticias de Apple</a>
+              {% else %}
+                <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Tesla (Acceso Restringido)</span>
+              {% endif %}
+          
+              <!-- Acceso a Diario Sin Fronteras para roles 1, 2 y 3 -->
+              {% if current_user.role_id in [1, 2, 3] %}
+                <a href="{{ url_for('sinfronteras') }}" class="ml-4 text-lg hover:underline">Diario Sin Fronteras</a>
+              {% else %}
+                <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Sin Fronteras (Acceso Restringido)</span>
+              {% endif %}
+          
+              <!-- Acceso a Diario El Peruano solo para roles 1 y 2 -->
+              {% if current_user.role_id in [1, 2] %}
+                <a href="{{ url_for('diarioelperuano') }}" class="ml-4 text-lg hover:underline">El Peruano</a>
+              {% else %}
+                <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">El Peruano (Acceso Restringido)</span>
+              {% endif %}
+          
+              <!-- Enlace de Administrador solo para rol 1 -->
+              {% if current_user.role_id == 1 %}
+                <a href="{{ url_for('admin_page') }}" class="ml-4 text-lg hover:underline text-yellow-400 font-bold">Administrador</a>
+              {% endif %}
+            {% else %}
+              <!-- Mensajes para usuarios no autenticados -->
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Correo (Inicia sesión)</span>
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Noticias de Tesla (Inicia sesión)</span>
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Sin Fronteras (Inicia sesión)</span>
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">El Peruano (Inicia sesión)</span>
+            {% endif %}
+          
+            <!-- Botones de Login/Logout -->
+            {% if not current_user.is_authenticated %}
+              <a href="{{ url_for('login') }}" class="ml-4 text-lg hover:underline bg-blue-600 px-4 py-2 rounded text-white">Login</a>
+            {% else %}
+              <a href="{{ url_for('logout') }}" class="ml-4 text-lg hover:underline bg-red-600 px-4 py-2 rounded text-white">Logout</a>
+            {% endif %}
+          </nav>
+          
+        </div>
+      </header>
+  
+
+    <div class="container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-4xl font-bold text-center mb-8">Noticias Guardadas</h2>
+
+      <!-- Formulario de búsqueda -->
+      <div class="mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input
+            type="text"
+            id="buscar-titulo"
+            placeholder="Buscar por título"
+            class="p-2 border rounded"
+            oninput="filtrarNoticias()"
+          />
+          <input
+            type="date"
+            id="buscar-fecha"
+            class="p-2 border rounded"
+            onchange="filtrarNoticias()"
+          />
+        </div>
+      </div>
+
+      <div id="noticias-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Las noticias iniciales se cargan aquí -->
+        {% for noticia in noticias %}
+        <div class="news-card relative bg-white rounded-lg shadow-md hover:shadow-xl p-6 transform transition-all">
+          {% if noticia['url_imagen'] %}
+          <img
+            src="{{ noticia['url_imagen'] }}"
+            alt="Imagen de la noticia"
+            class="w-full h-48 object-cover rounded-lg mb-4"
+          />
+          {% endif %}
+          <h2 class="text-xl font-semibold text-blue-700 mb-2">
+            <a href="{{ noticia['url'] }}" target="_blank" class="hover:underline">{{ noticia['titulo'] }}</a>
+          </h2>
+          <p class="text-gray-500 mb-2">
+            <strong>Fecha:</strong> {{ noticia['fecha_publicacion'] }}
+          </p>
+          <p class="text-gray-700">{{ noticia['descripcion'] }}</p>
+          <p class="text-gray-600 mt-2"><strong>Fuente:</strong> {{ noticia['fuente'] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <footer class="bg-blue-800 text-white py-6 mt-8">
+      <div class="container mx-auto text-center">
+        <p>&copy; 2024 Noticias de Tesla. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+  </body>
+</html>

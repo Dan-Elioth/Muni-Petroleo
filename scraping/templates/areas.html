@@ -1,0 +1,126 @@
+{% extends 'layout.html' %}
+
+{% block title %}Administrar Áreas{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-10">
+
+<h1 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Administrar Áreas</h1>
+
+<!-- Botón para abrir el modal de creación -->
+<div class="flex justify-end mb-6">
+    <button onclick="abrirModalCrear()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition duration-300 text-lg">➕ Nueva Área</button>
+</div>
+
+<!-- Tabla de áreas -->
+<div class="overflow-x-auto">
+    <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+        <thead class="bg-blue-500 text-white">
+            <tr>
+                <th class="py-3 px-6 text-left">ID</th>
+                <th class="py-3 px-6 text-left">Nombre</th>
+                <th class="py-3 px-6 text-left">Descripción</th>
+                <th class="py-3 px-6 text-left">Jefe de Área</th>
+                <th class="py-3 px-6 text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for area in areas %}
+            <tr class="border-b hover:bg-blue-50">
+                <td class="py-4 px-6">{{ area[0] }}</td>
+                <td class="py-4 px-6">{{ area[1] }}</td>
+                <td class="py-4 px-6">{{ area[2] }}</td>
+                <td class="py-4 px-6">{{ area[3] }}</td>
+                <td class="py-4 px-6 flex justify-center gap-4">
+                    <!-- Botón para abrir el modal de edición -->
+                    <button onclick="abrirModalEditar('{{ area[0] }}', '{{ area[1] }}', '{{ area[2] }}', '{{ area[3] }}')" 
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow text-lg">✏️ Editar</button>
+                
+                    <!-- Formulario para eliminar -->
+                    <form action="{{ url_for('eliminar_area', area_id=area[0]) }}" method="POST" class="inline">
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg" 
+                            onclick="return confirm('¿Seguro que deseas eliminar esta área?');">🗑️ Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal de Crear Área -->
+<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-6">Crear Nueva Área</h2>
+
+        <form action="{{ url_for('crear_area') }}" method="POST">
+
+            <label class="block mb-2 font-semibold">Nombre del Área:</label>
+            <input type="text" name="nombre" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <label class="block mb-2 font-semibold">Descripción:</label>
+            <textarea name="descripcion" class="border p-3 w-full rounded-lg mb-4" required></textarea>
+
+            <label class="block mb-2 font-semibold">Jefe del Área:</label>
+            <input type="text" name="jefe_area" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Editar Área -->
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-6">Editar Área</h2>
+
+        <form id="formEditar" method="POST">
+            <input type="hidden" name="area_id" id="editarAreaId">
+
+            <label class="block mb-2 font-semibold">Nombre del Área:</label>
+            <input type="text" name="nombre" id="editarNombre" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <label class="block mb-2 font-semibold">Descripción:</label>
+            <textarea name="descripcion" id="editarDescripcion" class="border p-3 w-full rounded-lg mb-4" required></textarea>
+
+            <label class="block mb-2 font-semibold">Jefe del Área:</label>
+            <input type="text" name="jefe_area" id="editarJefeArea" class="border p-3 w-full rounded-lg mb-4" required>
+
+            <div class="flex justify-end gap-4">
+                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts para controlar el modal -->
+<script>
+    function abrirModalCrear() {
+        document.getElementById('modalCrear').classList.remove('hidden');
+    }
+
+    function cerrarModalCrear() {
+        document.getElementById('modalCrear').classList.add('hidden');
+    }
+
+    function abrirModalEditar(areaId, nombre, descripcion, jefeArea) {
+        document.getElementById('editarAreaId').value = areaId;
+        document.getElementById('editarNombre').value = nombre;
+        document.getElementById('editarDescripcion').value = descripcion;
+        document.getElementById('editarJefeArea').value = jefeArea;
+
+        document.getElementById('formEditar').action = `/areas/editar/${areaId}`;
+        document.getElementById('modalEditar').classList.remove('hidden');
+    }
+
+    function cerrarModalEditar() {
+        document.getElementById('modalEditar').classList.add('hidden');
+    }
+</script>
+
+</div>
+{% endblock %}

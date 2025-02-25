@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas de Noticias</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Sidebar -->
+    <div class="flex min-h-screen">
+      <nav class="bg-blue-900 text-white w-full md:w-64 space-y-6 py-6 px-4 md:py-7 md:px-2">
+        <!-- Información del Usuario -->
+        <div class="text-center mb-6">
+            <p class="text-lg font-bold">Bienvenido,</p>
+            <p class="text-xl font-semibold">{{ current_user.username }}</p>
+            <p class="text-sm italic">Rol: 
+                {% if current_user.role_id == 1 %} Administrador
+                {% elif current_user.role_id == 2 %} Usuario Premium
+                {% elif current_user.role_id == 3 %} Usuario Regular
+                {% else %} Invitado
+                {% endif %}
+            </p>
+        </div>
+        
+        <!-- Navegación -->
+        <ul class="mt-4 space-y-4">
+            <li>
+                <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                    Inicio
+                </a>
+            </li>
+            
+            {% if current_user.role_id in [1, 2, 3] %}
+            <li>
+                <a href="/estadisticas" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                    Ver Estadísticas
+                </a>
+            </li>
+            {% endif %}
+            
+            {% if current_user.role_id in [1, 2, 3] %}
+            <li>
+                <a href="/reportes" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                    Ver Reportes
+                </a>
+            </li>
+            {% endif %}
+            
+            {% if current_user.role_id == 1 %}
+            <li>
+                <a href="/admin/approve_users" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-yellow-600 bg-yellow-500">
+                    Aprobar Usuarios
+                </a>
+            </li>
+            {% endif %}
+            
+            {% if current_user.role_id in [1, 2, 3] %}
+            <li>
+                <a href="/admin" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
+                    Administrador
+                </a>
+            </li>
+            {% endif %}
+            
+            <li>
+                <a href="{{ url_for('logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-red-700 bg-red-500">
+                    Logout
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+
+        <!-- Contenido principal -->
+        <div class="flex-1 p-10">
+            <!-- Encabezado -->
+            <header class="mb-10">
+                <h1 class="text-5xl font-bold text-center text-blue-800">Resumen de Noticias</h1>
+            </header>
+
+            <!-- Tarjetas de estadísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total de noticias de hoy -->
+                <div class="bg-blue-100 p-6 rounded-lg shadow-lg text-center">
+                    <h3 class="text-2xl font-bold text-blue-700">Noticias de Hoy</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-4">{{ total_hoy }}</p>
+                </div>
+
+                <!-- Total de noticias de ayer -->
+                <div class="bg-yellow-100 p-6 rounded-lg shadow-lg text-center">
+                    <h3 class="text-2xl font-bold text-yellow-700">Noticias de Ayer</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-4">{{ total_ayer }}</p>
+                </div>
+
+                <!-- Total de noticias de la semana pasada -->
+                <div class="bg-green-100 p-6 rounded-lg shadow-lg text-center">
+                    <h3 class="text-2xl font-bold text-green-700">Noticias de la Semana Anterior</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-4">{{ total_semana_anterior }}</p>
+                </div>
+
+                <!-- Total de todas las noticias -->
+                <div class="bg-purple-100 p-6 rounded-lg shadow-lg text-center">
+                    <h3 class="text-2xl font-bold text-purple-700">Total de Noticias</h3>
+                    <p class="text-4xl font-bold text-gray-800 mt-4">{{ total_noticias }}</p>
+                </div>
+            </div>
+
+            <!-- Responsive Two-Column Design for News Graphs -->
+            <div class="container mx-auto px-4 py-8 space-y-10">
+                <div class="grid gap-10 sm:grid-cols-1 md:grid-cols-2">
+                    
+
+
+                    <div class="mt-10 bg-white p-8 rounded-lg shadow-lg">
+                        <h2 class="text-3xl font-bold text-center text-teal-700 mb-8">Distribución de Noticias por Categoría</h2>
+                        <div class="mb-6 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                            <label for="diarioSelect" class="text-lg font-medium text-gray-700">Selecciona un Diario:</label>
+                            <select id="diarioSelect" class="border border-gray-300 text-gray-700 rounded-lg p-2 w-full md:w-auto shadow-sm focus:outline-none focus:ring focus:ring-teal-300">
+                                <option value="">Todos los Diarios</option>
+                                <option value="Diario Correo">Diario Correo</option>
+                                <option value="Diario Sin Fronteras">Diario Sin Fronteras</option>
+                                <option value="El Peruano">El Peruano</option>
+                                <!-- Agrega más opciones según tus datos -->
+                            </select>
+                        </div>
+                        <div class="relative">
+                            <canvas id="chartDistribucionNoticias" class="rounded-lg shadow-lg max-w-full h-auto"></canvas>
+                            <div id="chartLoading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-50 hidden">
+                                <div class="text-teal-700 text-lg font-semibold">Cargando...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    
+
+                    <div class="mt-10 bg-white p-8 rounded-lg shadow-lg">
+                        <h2 class="text-3xl font-bold text-center text-teal-700 mb-8">Distribución de Noticias por Diario</h2>
+                        <canvas id="chartDistribucionDiarios" class="rounded-lg shadow-lg max-w-full h-auto"></canvas>
+                        
+                    </div>
+                    
+
+                    
+                    
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 class="text-2xl md:text-3xl font-bold text-center text-pink-700 mb-4 md:mb-8">Longitud Media de Noticias por Categoría</h2>
+                        <div class="mb-4 flex justify-center">
+                            <label for="diarioSelect1" class="mr-4 font-medium text-gray-700">Selecciona un Diario:</label>
+                            <select id="diarioSelect1" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-pink-300">
+                                <option value="">Todos los Diarios</option>
+                                <option value="Diario Correo">Diario Correo</option>
+                                <option value="Diario Sin Fronteras">Diario Sin Fronteras</option>
+                                <option value="El Peruano">El Peruano</option>
+                                <!-- Agrega más opciones según tus datos -->
+                            </select>
+                        </div>
+                        <canvas id="chartLongitudMedia" class="rounded-lg shadow-lg max-w-full h-auto"></canvas>
+                    </div>
+                    
+                    
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 class="text-2xl md:text-3xl font-bold text-center text-yellow-700 mb-4 md:mb-8">Top 5 Fuentes de Noticias</h2>
+                        <div class="mb-4 flex flex-wrap justify-center space-x-4">
+                            <!-- Selector de Diario -->
+                            <div>
+                                <label for="diarioSelect8" class="block text-gray-700 font-medium">Selecciona un Diario:</label>
+                                <select id="diarioSelect8" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-yellow-300">
+                                    <option value="">Todos los Diarios</option>
+                                    <option value="Diario Correo">Diario Correo</option>
+                                    <option value="Diario Sin Fronteras">Diario Sin Fronteras</option>
+                                    <option value="El Peruano">El Peruano</option>
+                                    <!-- Agrega más opciones según tus datos -->
+                                </select>
+                            </div>
+                            <!-- Selector de Fechas -->
+                            <div>
+                                <label for="startDate8" class="block text-gray-700 font-medium">Desde:</label>
+                                <input type="date" id="startDate8" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-yellow-300">
+                            </div>
+                            <div>
+                                <label for="endDate8" class="block text-gray-700 font-medium">Hasta:</label>
+                                <input type="date" id="endDate8" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-yellow-300">
+                            </div>
+                        </div>
+                        <canvas id="chartTopSourcesWeek" class="rounded-lg shadow-lg max-w-full h-auto"></canvas>
+                    </div>
+                    
+                    
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 class="text-3xl font-bold text-center text-teal-700 mb-8">Nube de Palabras en los Títulos</h2>
+                        <div class="mb-4 flex flex-wrap justify-center space-x-4">
+                            <!-- Selector de Diario -->
+                            <div>
+                                <label for="diarioSelect4" class="block text-gray-700 font-medium">Selecciona un Diario:</label>
+                                <select id="diarioSelect4" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-teal-300">
+                                    <option value="">Todos los Diarios</option>
+                                    <option value="Diario Correo">Diario Correo</option>
+                                    <option value="Diario Sin Fronteras">Diario Sin Fronteras</option>
+                                    <option value="El Peruano">El Peruano</option>
+                                    <!-- Más diarios según los datos -->
+                                </select>
+                            </div>
+                            <!-- Selector de Categoría -->
+                            <div>
+                                <label for="categoriaSelect4" class="block text-gray-700 font-medium">Selecciona una Categoría:</label>
+                                <select id="categoriaSelect4" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-teal-300">
+                                    <option value="">Todas las Categorías</option>
+                                    <!-- Las categorías se generarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <img id="nubeDePalabras" class="rounded-lg shadow-lg max-w-full h-auto" alt="Nube de Palabras">
+                        </div>
+                    </div>
+                    
+                    
+
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 class="text-2xl md:text-3xl font-bold text-center text-blue-700 mb-4 md:mb-8">Gráfico de Noticias Scrapeadas por Día</h2>
+                        <form id="dateFilterForm" class="flex justify-center mb-4">
+                            <label class="mr-2">Desde:</label>
+                            <input type="date" id="startDate" class="border rounded p-2 mr-4">
+                            <label class="mr-2">Hasta:</label>
+                            <input type="date" id="endDate" class="border rounded p-2 mr-4">
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Filtrar</button>
+                        </form>
+                        <canvas id="chartNoticiasPorDia" class="rounded-lg shadow-lg max-w-full h-auto"></canvas>
+                    </div>
+                    
+                    
+                    
+                    
+                    <div class="bg-white p-8 rounded-lg shadow-lg">
+                        <h2 class="text-3xl font-bold text-center text-teal-700 mb-8">Distribución de Noticias por Semana del Mes y Día de la Semana</h2>
+                        <div class="mb-4 flex flex-wrap justify-center space-x-4">
+                            <!-- Selector de Diario -->
+                            <div>
+                                <label for="diarioSelect6" class="block text-gray-700 font-medium">Selecciona un Diario:</label>
+                                <select id="diarioSelect6" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-teal-300">
+                                    <option value="">Todos los Diarios</option>
+                                    <option value="Diario Correo">Diario Correo</option>
+                                    <option value="Diario Sin Fronteras">Diario Sin Fronteras</option>
+                                    <option value="El Peruano">El Peruano</option>
+                                    <!-- Agrega más opciones según tus datos -->
+                                </select>
+                            </div>
+                            <!-- Selector de Categoría -->
+                            <div>
+                                <label for="categoriaSelect6" class="block text-gray-700 font-medium">Selecciona una Categoría:</label>
+                                <select id="categoriaSelect6" class="border border-gray-300 rounded-lg p-2 shadow-sm focus:outline-none focus:ring focus:ring-teal-300">
+                                    <option value="">Todas las Categorías</option>
+                                    <!-- Categorías se generarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <img id="heatmapNoticias" class="rounded-lg shadow-lg max-w-full h-auto" alt="Distribución por Semana del Mes y Día">
+                        </div>
+                    </div>
+                    
+
+                    
+                    
+                    
+                    
+                </div>
+            </div>
+
+
+            
+
+            
+            
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script>
+    // Función para cargar datos y graficar
+    function loadChartData(startDate = null, endDate = null) {
+        // Construir la URL con parámetros opcionales
+        let url = '/graficos/noticias_por_dia';
+        if (startDate && endDate) {
+            url += `?start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        // Fetch datos del backend
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.scrape_date);
+                const values = data.map(item => item.total_noticias);
+
+                // Crear o actualizar el gráfico
+                if (window.noticiasChart) {
+                    // Actualizar datos del gráfico existente
+                    window.noticiasChart.data.labels = labels;
+                    window.noticiasChart.data.datasets[0].data = values;
+                    window.noticiasChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartNoticiasPorDia').getContext('2d');
+                    window.noticiasChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Noticias por Día',
+                                data: values,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        autoSkip: true,
+                                        maxRotation: 45,
+                                        minRotation: 0
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+            });
+    }
+
+    // Cargar datos por defecto al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadChartData(); // Sin fechas para cargar todos los datos
+    });
+
+    // Manejar el envío del formulario
+    document.getElementById('dateFilterForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Evitar que el formulario recargue la página
+
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        if (!startDate || !endDate) {
+            alert('Por favor selecciona ambas fechas.');
+            return;
+        }
+
+        // Cargar el gráfico con las fechas seleccionadas
+        loadChartData(startDate, endDate);
+    });
+</script>
+
+<script>
+    // Función para cargar y graficar la distribución de noticias por categoría
+    function loadDistributionChart(diario = '') {
+        // Mostrar el indicador de carga
+        document.getElementById('chartLoading').classList.remove('hidden');
+
+        // Construir la URL con el parámetro "diario" si está presente
+        let url = '/graficos/distribucion_noticias_por_categoria';
+        if (diario) {
+            url += `?diario=${encodeURIComponent(diario)}`;
+        }
+
+        // Fetch datos del backend
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.source); // Categorías
+                const values = data.map(item => item.total_noticias); // Valores
+
+                // Crear o actualizar el gráfico
+                if (window.distributionChart) {
+                    // Actualizar datos del gráfico existente
+                    window.distributionChart.data.labels = labels;
+                    window.distributionChart.data.datasets[0].data = values;
+                    window.distributionChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartDistribucionNoticias').getContext('2d');
+                    window.distributionChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Noticias por Categoría',
+                                data: values,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.5)',
+                                    'rgba(54, 162, 235, 0.5)',
+                                    'rgba(255, 206, 86, 0.5)',
+                                    'rgba(75, 192, 192, 0.5)',
+                                    'rgba(153, 102, 255, 0.5)',
+                                    'rgba(255, 159, 64, 0.5)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Ocultar el indicador de carga
+                document.getElementById('chartLoading').classList.add('hidden');
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+                // Ocultar el indicador de carga en caso de error
+                document.getElementById('chartLoading').classList.add('hidden');
+            });
+    }
+
+    // Manejar el cambio en el dropdown
+    document.getElementById('diarioSelect').addEventListener('change', function () {
+        const selectedDiario = this.value; // Obtener el valor seleccionado
+        loadDistributionChart(selectedDiario); // Cargar el gráfico con el diario seleccionado
+    });
+
+    // Cargar el gráfico por defecto con todos los diarios al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDistributionChart(); // Sin parámetro para cargar todos los datos
+    });
+</script>
+
+<script>
+    // Función para cargar y graficar la distribución de noticias por diario
+    function loadDistributionByDiario() {
+        // Fetch datos del backend
+        fetch('/graficos/distribucion_noticias_por_diario')
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.diario); // Diarios
+                const values = data.map(item => item.total_noticias); // Totales
+
+                // Crear o actualizar el gráfico
+                if (window.diariosChart) {
+                    // Actualizar datos del gráfico existente
+                    window.diariosChart.data.labels = labels;
+                    window.diariosChart.data.datasets[0].data = values;
+                    window.diariosChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartDistribucionDiarios').getContext('2d');
+                    window.diariosChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Noticias por Diario',
+                                data: values,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.5)',
+                                    'rgba(54, 162, 235, 0.5)',
+                                    'rgba(255, 206, 86, 0.5)',
+                                    'rgba(75, 192, 192, 0.5)',
+                                    'rgba(153, 102, 255, 0.5)',
+                                    'rgba(255, 159, 64, 0.5)',
+                                    'rgba(201, 203, 207, 0.5)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)',
+                                    'rgba(201, 203, 207, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        font: {
+                                            size: 14
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                },
+                                datalabels: {
+                                    color: '#fff', // Color del texto
+                                    font: {
+                                        size: 14, // Tamaño del texto
+                                        weight: 'bold'
+                                    },
+                                    formatter: (value, context) => {
+                                        const label = context.chart.data.labels[context.dataIndex];
+                                        const percentage = ((value / context.dataset.data.reduce((sum, val) => sum + val, 0)) * 100).toFixed(1);
+                                        return `${label}\n${percentage}%`; // Etiqueta con nombre y porcentaje
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+            });
+    }
+
+    // Cargar el gráfico al cargar la página
+    document.addEventListener('DOMContentLoaded', loadDistributionByDiario);
+</script>
+
+<script>
+    // Función para cargar y graficar la longitud promedio de noticias por categoría
+    function loadAverageLengthByCategory(diario = '') {
+        // Construir la URL con el parámetro "diario" si está presente
+        let url = '/graficos/longitud_media_por_categoria';
+        if (diario) {
+            url += `?diario=${encodeURIComponent(diario)}`;
+        }
+
+        // Fetch datos del backend
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.source); // Categorías
+                const values = data.map(item => item.avg_length); // Longitud promedio
+
+                // Crear o actualizar el gráfico
+                if (window.averageLengthChart) {
+                    // Actualizar datos del gráfico existente
+                    window.averageLengthChart.data.labels = labels;
+                    window.averageLengthChart.data.datasets[0].data = values;
+                    window.averageLengthChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartLongitudMedia').getContext('2d');
+                    window.averageLengthChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Longitud Promedio de Noticias',
+                                data: values,
+                                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        autoSkip: true,
+                                        maxRotation: 45,
+                                        minRotation: 0
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Categorías'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Longitud Promedio (caracteres)'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return `Longitud Promedio: ${context.raw.toFixed(2)} caracteres`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+            });
+    }
+
+    // Manejar el cambio en el dropdown
+    document.getElementById('diarioSelect1').addEventListener('change', function () {
+        const selectedDiario = this.value; // Obtener el valor seleccionado
+        loadAverageLengthByCategory(selectedDiario); // Cargar el gráfico con el diario seleccionado
+    });
+
+    // Cargar el gráfico por defecto con todos los diarios al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAverageLengthByCategory(); // Sin parámetro para cargar todos los datos
+    });
+</script>
+
+<script>
+    // Función para cargar y graficar las top fuentes de noticias
+    function loadTopSourcesWeek() {
+        // Obtener los valores de los filtros
+        const diario = document.getElementById('diarioSelect8').value;
+        const startDate = document.getElementById('startDate8').value;
+        const endDate = document.getElementById('endDate8').value;
+
+        // Construir la URL con los parámetros seleccionados
+        let url = '/graficos/top_sources_week';
+        const params = [];
+        if (diario) params.push(`diario=${encodeURIComponent(diario)}`);
+        if (startDate) params.push(`start_date=${startDate}`);
+        if (endDate) params.push(`end_date=${endDate}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+
+        // Fetch datos del backend
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.source); // Fuentes
+                const values = data.map(item => item.total); // Totales
+
+                // Crear o actualizar el gráfico
+                if (window.topSourcesChart) {
+                    // Actualizar datos del gráfico existente
+                    window.topSourcesChart.data.labels = labels;
+                    window.topSourcesChart.data.datasets[0].data = values;
+                    window.topSourcesChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartTopSourcesWeek').getContext('2d');
+                    window.topSourcesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total de Noticias',
+                                data: values,
+                                backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            indexAxis: 'y', // Cambiar a gráfico horizontal
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Total de Noticias'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Fuente'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false // Ocultar la leyenda
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return `Total: ${context.raw}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+            });
+    }
+
+    // Manejar el cambio en los filtros
+    document.getElementById('diarioSelect8').addEventListener('change', loadTopSourcesWeek);
+    document.getElementById('startDate8').addEventListener('change', loadTopSourcesWeek);
+    document.getElementById('endDate8').addEventListener('change', loadTopSourcesWeek);
+
+    // Cargar el gráfico por defecto al cargar la página
+    document.addEventListener('DOMContentLoaded', loadTopSourcesWeek);
+</script>
+
+
+<script>
+    // Función para cargar y graficar las top fuentes de noticias
+    function loadTopSourcesWeek() {
+        // Obtener los valores de los filtros
+        const diario = document.getElementById('diarioSelect').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        // Construir la URL con los parámetros seleccionados
+        let url = '/graficos/top_sources_week';
+        const params = [];
+        if (diario) params.push(`diario=${encodeURIComponent(diario)}`);
+        if (startDate) params.push(`start_date=${startDate}`);
+        if (endDate) params.push(`end_date=${endDate}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+
+        // Fetch datos del backend
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.source); // Fuentes
+                const values = data.map(item => item.total); // Totales
+
+                // Crear o actualizar el gráfico
+                if (window.topSourcesChart) {
+                    // Actualizar datos del gráfico existente
+                    window.topSourcesChart.data.labels = labels;
+                    window.topSourcesChart.data.datasets[0].data = values;
+                    window.topSourcesChart.update();
+                } else {
+                    // Crear un nuevo gráfico si no existe
+                    const ctx = document.getElementById('chartTopSourcesWeek').getContext('2d');
+                    window.topSourcesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total de Noticias',
+                                data: values,
+                                backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            indexAxis: 'y', // Cambiar a gráfico horizontal
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Total de Noticias'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Fuente'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false // Ocultar la leyenda
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            return `Total: ${context.raw}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar los datos:', error);
+            });
+    }
+
+    // Manejar el cambio en los filtros
+    document.getElementById('diarioSelect2').addEventListener('change', loadTopSourcesWeek);
+    document.getElementById('startDate1').addEventListener('change', loadTopSourcesWeek);
+    document.getElementById('endDate1').addEventListener('change', loadTopSourcesWeek);
+
+    // Cargar el gráfico por defecto al cargar la página
+    document.addEventListener('DOMContentLoaded', loadTopSourcesWeek);
+</script>
+
+
+<script>
+    // Función para cargar las categorías en el selector
+    function loadCategories() {
+        fetch('/graficos/listar_categorias')
+            .then(response => response.json())
+            .then(categorias => {
+                const categoriaSelect = document.getElementById('categoriaSelect4');
+                categoriaSelect.innerHTML = '<option value="">Todas las Categorías</option>'; // Resetear opciones
+                
+                // Añadir dinámicamente las categorías al selector
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria;
+                    option.textContent = categoria;
+                    categoriaSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar las categorías:', error);
+            });
+    }
+
+    // Función para cargar y mostrar la nube de palabras con filtros
+    function loadWordCloud() {
+        // Obtener los valores de los filtros
+        const diario = document.getElementById('diarioSelect4').value;
+        const categoria = document.getElementById('categoriaSelect4').value;
+
+        // Construir la URL con los parámetros seleccionados
+        let url = '/graficos/nube_de_palabras_titulos';
+        const params = [];
+        if (diario) params.push(`diario=${encodeURIComponent(diario)}`);
+        if (categoria) params.push(`categoria=${encodeURIComponent(categoria)}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+
+        // Actualizar la imagen de la nube de palabras
+        const img = document.getElementById('nubeDePalabras');
+        img.src = url;
+        img.alt = 'Cargando nube de palabras...';
+    }
+
+    // Manejar el cambio en los filtros
+    document.getElementById('diarioSelect4').addEventListener('change', loadWordCloud);
+    document.getElementById('categoriaSelect4').addEventListener('change', loadWordCloud);
+
+    // Cargar las categorías y la nube de palabras por defecto al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories(); // Cargar dinámicamente las categorías
+        loadWordCloud();  // Cargar la nube de palabras por defecto
+    });
+</script>
+
+
+<script>
+    // Cargar dinámicamente las categorías
+    function loadCategories() {
+        fetch('/graficos/listar_categorias')
+            .then(response => response.json())
+            .then(categorias => {
+                const categoriaSelect = document.getElementById('categoriaSelect6');
+                categoriaSelect.innerHTML = '<option value="">Todas las Categorías</option>';
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria;
+                    option.textContent = categoria;
+                    categoriaSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error al cargar las categorías:', error));
+    }
+
+    // Cargar y mostrar el Heatmap con filtros
+    function loadHeatmap() {
+        const diario = document.getElementById('diarioSelect6').value;
+        const categoria = document.getElementById('categoriaSelect6').value;
+
+        let url = '/graficos/heatmap_noticias_por_dia_semana_mes';
+        const params = [];
+        if (diario) params.push(`diario=${encodeURIComponent(diario)}`);
+        if (categoria) params.push(`categoria=${encodeURIComponent(categoria)}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+
+        const img = document.getElementById('heatmapNoticias');
+        img.src = url;
+        img.alt = 'Cargando heatmap...';
+    }
+
+    // Manejar los cambios en los filtros
+    document.getElementById('diarioSelect6').addEventListener('change', loadHeatmap);
+    document.getElementById('categoriaSelect6').addEventListener('change', loadHeatmap);
+
+    // Cargar categorías y heatmap por defecto
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        loadHeatmap();
+    });
+</script>
+
+
+
+
+
+

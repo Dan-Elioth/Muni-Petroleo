@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal de Noticias - El Peruano</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .news-card:hover {
+        transform: scale(1.02);
+        transition: transform 0.3s ease-in-out;
+      }
+      .category-card:hover {
+        background-color: #f0f0f0;
+        transition: background-color 0.3s ease-in-out;
+      }
+      .badge {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        background-color: #3490dc;
+        color: white;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <!-- Header de El Peruano -->
+    <header class="bg-blue-800 text-white py-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Portal de Noticias - El Peruano</h1>
+        <nav>
+          <a href="{{ url_for('inicio') }}" class="text-lg hover:underline">Inicio</a>
+        
+          {% if current_user.is_authenticated %}
+            <!-- Acceso a Diario Correo para roles 1, 2 y 3 -->
+            {% if current_user.role_id in [1, 2, 3] %}
+              <a href="{{ url_for('diariocorreo') }}" class="ml-4 text-lg hover:underline">Diario Correo</a>
+            {% else %}
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Correo (Acceso Restringido)</span>
+            {% endif %}
+        
+            <!-- Acceso a Tesla para roles 1 y 2 -->
+            {% if current_user.role_id in [1, 2] %}
+              <a href="{{ url_for('noticias_tesla') }}" class="ml-4 text-lg hover:underline">Noticias de Tesla</a>
+            {% else %}
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Tesla (Acceso Restringido)</span>
+            {% endif %}
+
+            <!-- Acceso a Tesla para roles 1 y 2 -->
+            {% if current_user.role_id in [1, 2] %}
+              <a href="{{ url_for('noticias_apple') }}" class="ml-4 text-lg hover:underline">Noticias de Apple</a>
+            {% else %}
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Tesla (Acceso Restringido)</span>
+            {% endif %}
+        
+            <!-- Acceso a Diario Sin Fronteras para roles 1, 2 y 3 -->
+            {% if current_user.role_id in [1, 2, 3] %}
+              <a href="{{ url_for('sinfronteras') }}" class="ml-4 text-lg hover:underline">Diario Sin Fronteras</a>
+            {% else %}
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Sin Fronteras (Acceso Restringido)</span>
+            {% endif %}
+        
+            <!-- Acceso a Diario El Peruano solo para roles 1 y 2 -->
+            {% if current_user.role_id in [1, 2] %}
+              <a href="{{ url_for('diarioelperuano') }}" class="ml-4 text-lg hover:underline">El Peruano</a>
+            {% else %}
+              <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">El Peruano (Acceso Restringido)</span>
+            {% endif %}
+
+            <!-- Enlace de Reportes para roles 1, 2 y 3 -->
+            {% if current_user.role_id in [2, 3] %}
+              <a href="{{ url_for('admin_page') }}" class="ml-4 text-lg hover:underline text-green-500 font-bold">Reportes</a>
+            {% endif %}
+        
+            <!-- Enlace de Administrador solo para rol 1 -->
+            {% if current_user.role_id == 1 %}
+              <a href="{{ url_for('admin_page') }}" class="ml-4 text-lg hover:underline text-yellow-400 font-bold">Administrador</a>
+            {% endif %}
+          {% else %}
+            <!-- Mensajes para usuarios no autenticados -->
+            <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Correo (Inicia sesión)</span>
+            <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Noticias de Tesla (Inicia sesión)</span>
+            <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">Diario Sin Fronteras (Inicia sesión)</span>
+            <span class="ml-4 text-lg text-gray-500 cursor-not-allowed">El Peruano (Inicia sesión)</span>
+          {% endif %}
+        
+          <!-- Botones de Login/Logout -->
+          {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('login') }}" class="ml-4 text-lg hover:underline bg-blue-600 px-4 py-2 rounded text-white">Login</a>
+          {% else %}
+            <a href="{{ url_for('logout') }}" class="ml-4 text-lg hover:underline bg-red-600 px-4 py-2 rounded text-white">Logout</a>
+          {% endif %}
+        </nav>
+        
+      </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <div class="container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-4xl font-bold text-center mb-8">
+        Portal de Noticias - El Peruano
+      </h2>
+
+      <!-- Sección para mostrar el total de noticias scrapeadas -->
+      <div class="text-center mt-6">
+        <h2 class="text-3xl font-bold text-blue-700 mb-4">
+          Total de Noticias Scrapeadas
+        </h2>
+        <p class="text-lg">
+          {{ total_noticias }} noticias en total han sido scrapeadas y almacenadas.
+        </p>
+      </div>
+
+      <!-- Sección de Categorías -->
+      <h2 id="categorias" class="text-3xl font-semibold mb-8 text-blue-800">
+        Categorías
+      </h2>
+      <section class="flex overflow-x-auto space-x-4 mb-3 py-4">
+        {% for categoria in categorias %}
+        <div class="category-card flex-none w-48 p-4 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300">
+          <div class="text-lg font-medium text-gray-700 text-center mb-2">
+            <a
+              href="{{ url_for('noticias_por_categoria', categoria_nombre=categoria['nombre']) }}"
+              class="text-blue-500 hover:underline"
+            >
+              {{ categoria['nombre'] }}
+            </a>
+          </div>
+          <div class="text-sm text-gray-500 text-center">
+            {{ categoria['conteo'] }} noticias disponibles.
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+
+      <!-- Sección de Noticias del Día -->
+      <h2 id="noticias_hoy" class="text-3xl font-semibold mb-6 text-blue-800">
+        Noticias del Día
+      </h2>
+
+      <p class="text-lg text-gray-600 mb-4">
+        Se han scrapeado <strong>{{ total_noticias_del_dia }}</strong> noticias hoy.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for article in noticias_del_dia %}
+        <div class="news-card relative bg-white rounded-lg shadow-md hover:shadow-xl p-6 transform transition-all">
+          <!-- Badge de Categoría -->
+          <div class="badge">
+            {{ article[7] }}
+          </div>
+          <img
+            src="{{ article[4] }}"
+            alt="Imagen de la noticia"
+            class="w-full h-48 object-cover rounded-lg mb-4"
+          />
+          <h2 class="text-xl font-semibold text-blue-700 mb-2">
+            <a
+              href="{{ url_for('noticia_detallada', noticia_id=article[0]) }}"
+              class="hover:underline"
+              >{{ article[1] }}</a
+            >
+          </h2>
+          <p class="text-gray-500 mb-2">
+            <strong>Fecha:</strong> {{ article[2] }}
+          </p>
+          <p class="text-gray-700">{{ article[3] }}</p>
+          <!-- Mostrar la fuente del diario -->
+          <p class="text-gray-600 mt-2">
+            <strong>Fuente:</strong> {{ article[9] }}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Sección de Noticias Generales -->
+      <h2 id="noticias" class="text-3xl font-semibold mb-6 text-blue-800 mt-10">
+        Noticias Generales
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for article in news %}
+        <div class="news-card relative bg-white rounded-lg shadow-md hover:shadow-xl p-6 transform transition-all">
+          <!-- Badge de Categoría -->
+          <div class="badge">
+            {{ article[7] }}
+          </div>
+          <img
+            src="{{ article[4] }}"
+            alt="Imagen de la noticia"
+            class="w-full h-48 object-cover rounded-lg mb-4"
+          />
+          <h2 class="text-xl font-semibold text-blue-700 mb-2">
+            <a
+              href="{{ url_for('noticia_detallada', noticia_id=article[0]) }}"
+              class="hover:underline"
+              >{{ article[1] }}</a
+            >
+          </h2>
+          <p class="text-gray-500 mb-2">
+            <strong>Fecha:</strong> {{ article[2] }}
+          </p>
+          <p class="text-gray-700">{{ article[3] }}</p>
+          <!-- Mostrar la fuente del diario -->
+          <p class="text-gray-600 mt-2">
+            <strong>Fuente:</strong> {{ article[9] }}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-blue-800 text-white py-6 mt-8">
+      <div class="container mx-auto text-center">
+        <p>&copy; 2024 El Peruano. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<script>
+  // Función para recargar noticias cada 5 minutos
+  function recargarNoticias() {
+    fetch("/diario_el_peruano")
+      .then((response) => response.text())
+      .then((data) => {
+        document.body.innerHTML = data;
+      })
+      .catch((error) => console.error("Error al actualizar noticias:", error));
+  }
+
+  // Ejecutar la función cada 5 minutos (300000 ms)
+  setInterval(recargarNoticias, 300000);
+</script>
