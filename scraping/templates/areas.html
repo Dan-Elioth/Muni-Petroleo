@@ -21,6 +21,7 @@
                 <th class="py-3 px-6 text-left">Nombre</th>
                 <th class="py-3 px-6 text-left">Descripción</th>
                 <th class="py-3 px-6 text-left">Jefe de Área</th>
+                <th class="py-3 px-6 text-left">Estado</th>
                 <th class="py-3 px-6 text-center">Acciones</th>
             </tr>
         </thead>
@@ -31,15 +32,24 @@
                 <td class="py-4 px-6">{{ area[1] }}</td>
                 <td class="py-4 px-6">{{ area[2] }}</td>
                 <td class="py-4 px-6">{{ area[3] }}</td>
+                <td class="py-4 px-6"> 
+                    {% if area[4] == 1 %}
+                    <span class="text-green-600 font-semibold">Activo</span>
+                    {% else %}
+                        <span class="text-red-600 font-semibold">Inactivo</span>
+                    {% endif %}
+                </td>
                 <td class="py-4 px-6 flex justify-center gap-4">
                     <!-- Botón para abrir el modal de edición -->
-                    <button onclick="abrirModalEditar('{{ area[0] }}', '{{ area[1] }}', '{{ area[2] }}', '{{ area[3] }}')" 
+                    <button onclick="abrirModalEditar('{{ area[0] }}', '{{ area[1] }}', '{{ area[2] }}', '{{ area[3] }}', '{{ area[4] }}')" 
                         class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow text-lg">✏️ Editar</button>
                 
                     <!-- Formulario para eliminar -->
                     <form action="{{ url_for('eliminar_area', area_id=area[0]) }}" method="POST" class="inline">
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg" 
-                            onclick="return confirm('¿Seguro que deseas eliminar esta área?');">🗑️ Eliminar</button>
+                        <button type="button" onclick="confirmDeleteArea({{ area[0] }})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg">
+                            🗑️ Eliminar
+                        </button>
+                        
                     </form>
                 </td>
             </tr>
@@ -47,51 +57,89 @@
         </tbody>
     </table>
 </div>
-
 <!-- Modal de Crear Área -->
-<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-6">Crear Nueva Área</h2>
+<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
+        
+        <!-- Botón de cierre -->
+        <button onclick="cerrarModalCrear()" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">
+            &times;
+        </button>
 
-        <form action="{{ url_for('crear_area') }}" method="POST">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Crear Nueva Área</h2>
 
-            <label class="block mb-2 font-semibold">Nombre del Área:</label>
-            <input type="text" name="nombre" class="border p-3 w-full rounded-lg mb-4" required>
+        <form action="{{ url_for('crear_area') }}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Nombre del Área:</label>
+                <input type="text" name="nombre" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <label class="block mb-2 font-semibold">Descripción:</label>
-            <textarea name="descripcion" class="border p-3 w-full rounded-lg mb-4" required></textarea>
+            <div>
+                <label class="block text-sm font-medium mb-1">Descripción:</label>
+                <textarea name="descripcion" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required></textarea>
+            </div>
 
-            <label class="block mb-2 font-semibold">Jefe del Área:</label>
-            <input type="text" name="jefe_area" class="border p-3 w-full rounded-lg mb-4" required>
+            <div>
+                <label class="block text-sm font-medium mb-1">Jefe del Área:</label>
+                <input type="text" name="jefe_area" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Guardar</button>
+            <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">
+                    Guardar
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Modal de Editar Área -->
-<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-6">Editar Área</h2>
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 mt-20">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
+        
+        <!-- Botón de cierre -->
+        <button onclick="cerrarModalEditar()" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">
+            &times;
+        </button>
 
-        <form id="formEditar" method="POST">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Editar Área</h2>
+
+        <form id="formEditar" method="POST" class="space-y-4">
             <input type="hidden" name="area_id" id="editarAreaId">
 
-            <label class="block mb-2 font-semibold">Nombre del Área:</label>
-            <input type="text" name="nombre" id="editarNombre" class="border p-3 w-full rounded-lg mb-4" required>
+            <div>
+                <label class="block text-sm font-medium mb-1">Nombre del Área:</label>
+                <input type="text" name="nombre" id="editarNombre" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <label class="block mb-2 font-semibold">Descripción:</label>
-            <textarea name="descripcion" id="editarDescripcion" class="border p-3 w-full rounded-lg mb-4" required></textarea>
+            <div>
+                <label class="block text-sm font-medium mb-1">Descripción:</label>
+                <textarea name="descripcion" id="editarDescripcion" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required></textarea>
+            </div>
 
-            <label class="block mb-2 font-semibold">Jefe del Área:</label>
-            <input type="text" name="jefe_area" id="editarJefeArea" class="border p-3 w-full rounded-lg mb-4" required>
+            <div>
+                <label class="block text-sm font-medium mb-1">Jefe del Área:</label>
+                <input type="text" name="jefe_area" id="editarJefeArea" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Actualizar</button>
+            <div>
+                <label for="editarEstado" class="block text-sm font-medium mb-1">Estado:</label>
+                <select name="estado" id="editarEstado" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">
+                    Actualizar
+                </button>
             </div>
         </form>
     </div>
@@ -107,11 +155,12 @@
         document.getElementById('modalCrear').classList.add('hidden');
     }
 
-    function abrirModalEditar(areaId, nombre, descripcion, jefeArea) {
+    function abrirModalEditar(areaId, nombre, descripcion, jefeArea, estado) {
         document.getElementById('editarAreaId').value = areaId;
         document.getElementById('editarNombre').value = nombre;
         document.getElementById('editarDescripcion').value = descripcion;
         document.getElementById('editarJefeArea').value = jefeArea;
+        document.getElementById('editarEstado').value = estado;
 
         document.getElementById('formEditar').action = `/areas/editar/${areaId}`;
         document.getElementById('modalEditar').classList.remove('hidden');
@@ -121,6 +170,48 @@
         document.getElementById('modalEditar').classList.add('hidden');
     }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    async function confirmDeleteArea(id) {
+        const result = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Si hay registros ligados, solo se desactivará.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/areas/eliminar/${id}`, { method: "POST" });
+                const data = await response.json();
+
+                console.log("Respuesta del servidor:", data); // 📌 Verifica la respuesta
+
+                if (data.success) {
+                    await Swal.fire({
+                        title: "Éxito",
+                        text: data.message,
+                        icon: "success",
+                        timer: 2000
+                    });
+
+                    location.reload(); // 🔄 Recargar página
+                } else {
+                    Swal.fire("Error", data.message || "Hubo un problema con la eliminación", "error");
+                }
+            } catch (error) {
+                console.error("Error en la solicitud:", error);
+                Swal.fire("Error", "Hubo un problema con la eliminación", "error");
+            }
+        }
+    }
+</script>
+
 
 </div>
 {% endblock %}

@@ -7,17 +7,19 @@
     <h2 class="text-2xl font-semibold text-gray-700 text-center">Registrar Combustible</h2>
 
     <form method="POST" action="{{ url_for('registrar_combustible') }}" enctype="multipart/form-data" class="mt-6 space-y-4">
-        <!-- Usuario autenticado -->
+       
+
         <div>
             <label class="block text-sm font-medium text-gray-700">Usuario</label>
-            <input type="text" value="{{ current_user.id }}" disabled class="w-full p-2 border rounded-lg bg-gray-100">
+            <input type="text" value="{{ current_user.nombres }} {{ current_user.apellido_paterno }} {{ current_user.apellido_materno }}" disabled class="w-full p-2 border rounded-lg bg-gray-100">
         </div>
 
         <!-- Área -->
         <div>
             <label class="block font-medium">Área</label>
-<input type="text" value="{{ area_id if area_id else 'No asignado' }}" disabled class="w-full p-2 border rounded bg-gray-100">
+            <input type="text" value="{{ current_user.area_nombre }}" disabled class="w-full p-2 border rounded bg-gray-100">
         </div>
+
 
         <!-- Vehículo -->
         <div>
@@ -37,11 +39,15 @@
                 {% for reserva in reservas %}
                 <div class="flex items-center space-x-2">
                     <input type="checkbox" name="reservas" value="{{ reserva.id }}" data-cantidad="{{ reserva.cantidad_disponible }}" class="reserva_checkbox">
-                    <label>{{ reserva.id }} - Cantidad Disponible: <span class="reserva_cantidad">{{ reserva.cantidad_disponible }}</span></label>
+                    <label>
+                         O/S: {{ reserva.orden_servicio }} - Área: {{ reserva.nombre_area }} - Cantidad Disponible:
+                        <span class="reserva_cantidad">{{ reserva.cantidad_disponible }}</span>
+                    </label>
                 </div>
                 {% endfor %}
             </div>
         </div>
+
 
         <!-- Cantidad Total Disponible -->
         <div>
@@ -52,7 +58,8 @@
         <!-- Cantidad Solicitada -->
         <div>
             <label class="block text-sm font-medium text-gray-700">Cantidad Solicitada</label>
-            <input type="number" name="cantidad" id="cantidad_solicitada" step="0.01" required class="w-full p-2 border rounded-lg">
+            <input type="number" name="cantidad" id="cantidad_solicitada" step="0.01" min="0.01" required class="w-full p-2 border rounded-lg" oninput="validarCantidad()">
+            <p id="error-cantidad" class="text-red-500 text-sm hidden">La cantidad debe ser mayor a 0.</p>
         </div>
 
         <!-- Resumen de distribución -->
@@ -69,7 +76,7 @@
 
         <!-- Comentario -->
         <div>
-            <label class="block text-sm font-medium text-gray-700">Comentario</label>
+            <label class="block text-sm font-medium text-gray-700">Motivo</label>
             <textarea name="comentario" class="w-full p-2 border rounded-lg"></textarea>
         </div>
 
@@ -155,5 +162,18 @@
             }
         });
     });
+
+    function validarCantidad() {
+        const input = document.getElementById('cantidad_solicitada');
+        const error = document.getElementById('error-cantidad');
+        
+        if (input.value <= 0) {
+            error.classList.remove('hidden');
+            input.setCustomValidity("La cantidad debe ser mayor a 0.");
+        } else {
+            error.classList.add('hidden');
+            input.setCustomValidity("");
+        }
+    }
 </script>
 {% endblock %}

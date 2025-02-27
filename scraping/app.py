@@ -26,12 +26,10 @@ from gensim.utils import simple_preprocess
 from sklearn.metrics.pairwise import cosine_similarity
 from weasyprint import HTML
 from werkzeug.security import check_password_hash, generate_password_hash
+from xhtml2pdf import pisa
 
 # Importación de funciones y configuración de base de datos desde `database.py`
-from database import \
-    get_noticias_count_by_date_range  # Renombrar correctamente esta función para el conteo de noticias en rango
-from database import (  # Funciones para Diario Correo; Funciones para El Peruano
-    cursor, db, get_noticias_por_dia)
+from database import cursor, db
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -46,40 +44,133 @@ login_manager.login_message = "Please log in to access this page."
 login_manager.login_message_category = "info"
 
 class User(UserMixin):
-    def __init__(self, id, username, password_hash, role_id, estado, area_id):
+    def __init__(self, id, username, password_hash, role_id, estado, area_id, nombres, apellido_paterno, apellido_materno, area_nombre, rol_nombre):
         self.id = id
         self.username = username
         self.password_hash = password_hash
         self.role_id = role_id
         self.estado = estado
-        self.area_id = area_id  # Agrega este atributo
-
+        self.area_id = area_id  # ID del área
+        self.nombres = nombres
+        self.apellido_paterno = apellido_paterno
+        self.apellido_materno = apellido_materno
+        self.area_nombre = area_nombre  # Nombre del área
+        self.rol_nombre = rol_nombre 
+        
     @staticmethod
     def get_user_by_username(username):
-        cursor.execute("SELECT id, username, password_hash, role_id, estado FROM users WHERE username = %s", (username,))
+        cursor.execute("""
+            SELECT u.id, u.username, u.password_hash, u.role_id, u.estado, u.area_id, 
+                   COALESCE(u.nombres, ''), COALESCE(u.apellido_paterno, ''), COALESCE(u.apellido_materno, ''), 
+                   COALESCE(a.nombre, 'No asignado'), 
+                   COALESCE(r.nombre, 'Sin rol')  -- Se agrega el nombre del rol
+            FROM users u
+            LEFT JOIN areas a ON u.area_id = a.id
+            LEFT JOIN roles r ON u.role_id = r.id  -- Unimos la tabla de roles
+            WHERE u.username = %s
+        """, (username,))
+        
         user_data = cursor.fetchone()
+        
         if user_data:
-            return User(*user_data)  # Pasamos todos los datos al constructor
+            return User(*user_data)  # Pasa todos los datos correctamente
         return None
 
 
-    @staticmethod
-    def get_user_by_id(user_id):
-        cursor.execute("SELECT id, username, password_hash, role_id FROM users WHERE id = %s", (user_id,))
-        user_data = cursor.fetchone()
-        if user_data:
-            return User(user_data[0], user_data[1], user_data[2], user_data[3])
-        return None
 
-@login_manager.user_loader
-def load_user(user_id):
-    cursor.execute("SELECT id, username, password_hash, role_id, estado, area_id FROM users WHERE id = %s", (user_id,))
+@staticmethod
+def get_user_by_id(user_id):
+    cursor.execute("""
+        SELECT u.id, u.username, u.password_hash, u.role_id, u.estado, u.area_id, 
+               COALESCE(u.nombres, ''), COALESCE(u.apellido_paterno, ''), COALESCE(u.apellido_materno, ''), 
+               COALESCE(a.nombre, 'No asignado')
+        FROM users u
+        LEFT JOIN areas a ON u.area_id = a.id
+        WHERE u.id = %s
+    """, (user_id,))
+    
     user_data = cursor.fetchone()
+
     if user_data:
-        return User(*user_data)  # Ahora incluye `area_id`
+        return User(*user_data)  # ✅ Ahora pasa los 10 valores correctos
     return None
 
 
+from mysql.connector import Error
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    cursor = None  # ✅ Inicializa la variable antes del bloque try
+    try:
+        # 1. Reconectar si la conexión no está activa
+        if not db.is_connected():
+            db.reconnect(attempts=3, delay=1)
+
+        # 2. Consumir todos los resultados no leídos si existen
+        while db.unread_result:
+            db.consume_results()
+
+        # 3. Crear un nuevo cursor y ejecutar la consulta
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT u.id, u.username, u.password_hash, u.role_id, u.estado, u.area_id, 
+                   COALESCE(u.nombres, '') AS nombres, 
+                   COALESCE(u.apellido_paterno, '') AS apellido_paterno, 
+                   COALESCE(u.apellido_materno, '') AS apellido_materno, 
+                   COALESCE(a.nombre, 'No asignado') AS area_nombre, 
+                   COALESCE(r.nombre, 'Sin rol') AS rol_nombre
+            FROM users u
+            LEFT JOIN areas a ON u.area_id = a.id
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.id = %s
+        """, (user_id,))
+
+        # 4. Obtener los datos del usuario
+        user_data = cursor.fetchone()
+
+        # 5. Devolver el objeto User si existe
+        if user_data:
+            return User(**user_data)
+
+    except Error as e:
+        print(f"Error en load_user: {e}")
+
+    finally:
+        # ✅ Solo cerramos el cursor si se creó correctamente
+        if cursor is not None:
+            cursor.close()
+
+    return None
+
+
+@app.before_request
+def restrict_unapproved_users():
+    if current_user.is_authenticated and current_user.estado == 0:  # Aquí verificamos con 0
+        if request.endpoint not in ['logout', 'login', 'register']:
+            flash("Tu cuenta está pendiente de aprobación.", "warning")
+            return redirect(url_for('logout'))
+
+def requires_roles(*roles):
+    """
+    Decorador para restringir el acceso a usuarios con roles específicos.
+    :param roles: Lista de roles permitidos.
+    """
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            # Verificar si el usuario está autenticado
+            if not current_user.is_authenticated:
+                return abort(403)  # Prohibir acceso si no está autenticado
+
+            # Verificar si el rol del usuario está en la lista de roles permitidos
+            if current_user.role_id not in roles:
+                return abort(403)  # Prohibir acceso si el rol no es permitido
+            
+            # Si cumple con los roles, ejecutar la función
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
 
 # Función para convertir fechas relativas a absolutas
 def convertir_fecha_relativa(fecha_relativa):
@@ -140,62 +231,15 @@ def logout():
     flash("Has cerrado sesión correctamente.", "success")
     return redirect(url_for('inicio'))
 
-@app.route('/admin/manage_roles', methods=['GET', 'POST'])
-@login_required
-def manage_roles():
-    if current_user.role_id != 1:  # Solo los administradores pueden acceder
-        flash("No tienes permiso para acceder a esta página.", "danger")
-        return redirect(url_for('inicio'))
-
-    if request.method == 'POST':
-        user_id = request.form.get('user_id')
-        new_role = request.form.get('new_role')
-
-        try:
-            cursor.execute(
-                "UPDATE users SET role_id = %s WHERE id = %s",
-                (new_role, user_id)
-            )
-            db.commit()
-            flash("Rol actualizado con éxito.", "success")
-        except Exception as e:
-            flash(f"Error al actualizar el rol: {str(e)}", "danger")
-
-    # Obtener lista de usuarios y roles
-    cursor.execute("SELECT id, username, role_id FROM users")
-    users = cursor.fetchall()
-    roles = [
-        (1, "Administrador"),
-        (2, "Usuario Premium"),
-        (3, "Usuario Regular"),
-    ]
-
-    return render_template('manage_roles.html', users=users, roles=roles)
-
-
 import os
 
-from werkzeug.utils import secure_filename
-
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite de tamaño: 16MB
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-# Crear carpeta de uploads si no existe
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-# Función para validar archivos permitidos
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Ruta de registro
-# Ruta para el registro de usuarios
 import requests
+from werkzeug.utils import secure_filename
 
 
 @app.route('/register', methods=['GET', 'POST'])
+@login_required
+@requires_roles(1)
 def register():
     if request.method == 'POST':
         # Recibir los datos del formulario
@@ -240,6 +284,8 @@ def register():
 
 # Ruta para servir las imágenes subidas
 @app.route('/uploads/<filename>')
+@login_required
+@requires_roles(1)
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
@@ -260,86 +306,11 @@ def approve_users():
     unapproved_users = cursor.fetchall()
     return render_template('approve_users.html', users=unapproved_users)
 
-@app.before_request
-def restrict_unapproved_users():
-    if current_user.is_authenticated and current_user.estado == 0:  # Aquí verificamos con 0
-        if request.endpoint not in ['logout', 'login', 'register']:
-            flash("Tu cuenta está pendiente de aprobación.", "warning")
-            return redirect(url_for('logout'))
-
-def requires_roles(*roles):
-    """
-    Decorador para restringir el acceso a usuarios con roles específicos.
-    :param roles: Lista de roles permitidos.
-    """
-    def wrapper(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            # Verificar si el usuario está autenticado
-            if not current_user.is_authenticated:
-                return abort(403)  # Prohibir acceso si no está autenticado
-
-            # Verificar si el rol del usuario está en la lista de roles permitidos
-            if current_user.role_id not in roles:
-                return abort(403)  # Prohibir acceso si el rol no es permitido
-            
-            # Si cumple con los roles, ejecutar la función
-            return f(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-@app.route('/admin', methods=['GET'])
-@login_required
-def admin_page():
-    # Obtener el número de página de la solicitud (por defecto la página 1)
-    page = request.args.get('page', 1, type=int)
-    per_page = 30  # Mostrar 10 noticias por página
-
-    # Obtener el término de búsqueda
-    search_query = request.args.get('search', '')
-
-    # Si hay una búsqueda, filtrar las noticias por el título
-    if search_query:
-        cursor.execute(
-            "SELECT * FROM noticias WHERE title LIKE %s LIMIT %s OFFSET %s",
-            ('%' + search_query + '%', per_page, (page - 1) * per_page)
-        )
-    else:
-        cursor.execute("SELECT * FROM noticias LIMIT %s OFFSET %s", (per_page, (page - 1) * per_page))
-
-    noticias = cursor.fetchall()
-
-    # Obtener el número total de noticias
-    if search_query:
-        cursor.execute("SELECT COUNT(*) FROM noticias WHERE title LIKE %s", ('%' + search_query + '%',))
-    else:
-        cursor.execute("SELECT COUNT(*) FROM noticias")
-    
-    total_noticias = cursor.fetchone()[0]
-
-    # Calcular el número total de páginas
-    total_pages = (total_noticias // per_page) + (1 if total_noticias % per_page > 0 else 0)
-
-    # Incluir los datos del gráfico de noticias por día
-    df = get_noticias_por_dia()  # Llamar a la función que obtenga las noticias por día
-
-    # Verificar si la solicitud es AJAX y retornar solo la tabla
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('tabla_noticias.html', noticias=noticias, page=page, total_pages=total_pages)
-
-    # Si no es AJAX, renderizar la página completa
-    return render_template(
-        'admin.html',
-        noticias=noticias,
-        page=page,
-        total_pages=total_pages,
-        search_query=search_query,
-        noticias_por_dia=df
-    )
-    
 
 
 @app.route('/registro')
+@login_required
+@requires_roles(1)
 def registro():
     return render_template('registrocombustible.html')
     
@@ -348,12 +319,244 @@ def inicio():
     return render_template('login.html')
 
 @app.route('/index')
+@login_required
 def home():
-    return render_template('index.html')
+    # Consultas para contar registros en cada tabla
+    cursor.execute('SELECT COUNT(*) FROM registros_combustible')
+    total_registros = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM vehiculos')
+    total_vehiculos = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM reservas_combustible')
+    total_reservas = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_usuarios = cursor.fetchone()[0]
+    
+    # total de registros
+    cursor.execute('SELECT COUNT(*) FROM registros_combustible')
+    total_registros = cursor.fetchone()[0] or 1
 
 
-# 🟢 Mostrar lista de roles
+    cursor.execute('''
+        SELECT a.nombre AS area_nombre, COUNT(r.id) AS total_registros
+        FROM registros_combustible r
+        JOIN areas a ON r.area_id = a.id
+        GROUP BY a.nombre
+    ''')
+    registros_por_area = cursor.fetchall()
+
+    registros_con_porcentaje = [
+        (area, registros, round((registros / total_registros) * 100, 2))
+        for area, registros in registros_por_area
+    ]
+    
+    
+    #consumo
+    cursor.execute('SELECT SUM(cantidad) FROM registros_combustible')
+    consumo_total = cursor.fetchone()[0] or 1
+
+    cursor.execute('''
+        SELECT a.nombre AS area_nombre, SUM(r.cantidad) AS total_consumido
+        FROM registros_combustible r
+        JOIN areas a ON r.area_id = a.id
+        GROUP BY a.nombre
+    ''')
+    consumo_por_area = cursor.fetchall()
+
+    consumo_con_porcentaje = [
+        (area, cantidad, round((cantidad / consumo_total) * 100, 2))
+        for area, cantidad in consumo_por_area
+    ]
+
+    return render_template('index.html', 
+                           total_registros=total_registros, 
+                           total_vehiculos=total_vehiculos, 
+                           total_reservas=total_reservas, 
+                           total_usuarios=total_usuarios,
+                           registros_por_area=registros_por_area,
+                           consumo_por_area=consumo_por_area,
+                           consumo_con_porcentaje=consumo_con_porcentaje,
+                           registros_con_porcentaje=registros_con_porcentaje)
+    
+    
+@app.route('/reportes', methods=['GET'])
+@login_required
+def detalles_consumo():
+    area_filtro = request.args.get('area', '')
+
+    cursor = db.cursor()
+
+    # Configurar el idioma de los nombres de los meses a español
+    cursor.execute("SET lc_time_names = 'es_ES'")
+
+    query = '''
+    SELECT a.nombre AS area,
+           u.nombres AS usuario,
+           CONCAT(v.modelo, ' - ', v.numero_placa) AS vehiculo,
+           MONTHNAME(rc.fecha_actualizacion) AS mes,
+           rc.cantidad,
+           rc.documento_path,
+           rc.fecha_actualizacion,
+           GROUP_CONCAT(r.orden_servicio) AS reservas
+    FROM registros_combustible rc
+    JOIN areas a ON rc.area_id = a.id
+    JOIN users u ON rc.user_id = u.id
+    JOIN vehiculos v ON rc.vehiculo_id = v.id
+    LEFT JOIN registro_reservas rr ON rc.id = rr.registro_id
+    LEFT JOIN reservas_combustible r ON rr.reserva_id = r.id
+    '''
+
+    # Verificar si el usuario es administrador
+    es_admin = current_user.role_id == 1
+
+    # Condiciones de filtrado
+    condiciones = []
+    parametros = []
+
+    # Si no es admin, filtrar por el usuario actual
+    if not es_admin:
+        condiciones.append("rc.user_id = %s")
+        parametros.append(current_user.id)
+
+    # Si se proporciona un filtro de área (y es admin), aplicarlo
+    if area_filtro and es_admin:
+        condiciones.append("a.nombre = %s")
+        parametros.append(area_filtro)
+
+    # Agregar condiciones a la consulta si existen
+    if condiciones:
+        query += " WHERE " + " AND ".join(condiciones)
+
+    query += " GROUP BY rc.id, a.nombre, u.nombres, v.modelo, v.numero_placa"
+    query += " ORDER BY rc.fecha_actualizacion DESC"
+
+    # Ejecutar la consulta con los parámetros
+    cursor.execute(query, tuple(parametros))
+    detalles_consumo = cursor.fetchall()
+
+    # Obtener las áreas para el filtro (solo si es admin)
+    areas = []
+    if es_admin:
+        cursor.execute('SELECT nombre FROM areas')
+        areas = [area[0] for area in cursor.fetchall()]
+
+    return render_template('reportes.html', detalles_consumo=detalles_consumo, areas=areas, area_filtro=area_filtro, es_admin=es_admin)
+
+
+from datetime import datetime
+from io import BytesIO
+
+
+@app.route('/reportes/pdf', methods=['GET'])
+@login_required
+def exportar_pdf():
+    area_filtro = request.args.get('area', '')
+
+    cursor = db.cursor()
+    cursor.execute("SET lc_time_names = 'es_ES'")
+
+    query = '''
+    SELECT a.nombre AS area,
+           u.nombres AS usuario,
+           CONCAT(v.modelo, ' - ', v.numero_placa) AS vehiculo,
+           MONTHNAME(rc.fecha_actualizacion) AS mes,
+           rc.cantidad,
+           rc.documento_path,
+           rc.fecha_actualizacion,
+           GROUP_CONCAT(r.orden_servicio) AS reservas
+    FROM registros_combustible rc
+    JOIN areas a ON rc.area_id = a.id
+    JOIN users u ON rc.user_id = u.id
+    JOIN vehiculos v ON rc.vehiculo_id = v.id
+    LEFT JOIN registro_reservas rr ON rc.id = rr.registro_id
+    LEFT JOIN reservas_combustible r ON rr.reserva_id = r.id
+    '''
+
+    es_admin = current_user.role_id == 1
+
+    condiciones = []
+    parametros = []
+
+    if not es_admin:
+        condiciones.append("rc.user_id = %s")
+        parametros.append(current_user.id)
+
+    if area_filtro and es_admin:
+        condiciones.append("a.nombre = %s")
+        parametros.append(area_filtro)
+
+    if condiciones:
+        query += " WHERE " + " AND ".join(condiciones)
+
+    query += " GROUP BY rc.id, a.nombre, u.nombres, v.modelo, v.numero_placa"
+    query += " ORDER BY rc.fecha_actualizacion DESC"
+
+    cursor.execute(query, tuple(parametros))
+    detalles_consumo = cursor.fetchall()
+
+    # Generar el PDF
+    pdf = BytesIO()
+    html = render_template('reportes_pdf.html', detalles_consumo=detalles_consumo, fecha_actual=datetime.now())
+    pisa.CreatePDF(BytesIO(html.encode('utf-8')), pdf)
+
+    pdf.seek(0)
+    return Response(pdf, content_type='application/pdf',
+                    headers={"Content-Disposition": "inline; filename=reportes.pdf"})
+
+
+
+from datetime import datetime
+
+
+def get_month_name(mes):
+    meses = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+    return meses[mes - 1] if 1 <= mes <= 12 else "Mes Desconocido"
+
+@app.route('/graficos/cantidad_mes_actual', methods=['GET'])
+@login_required
+def cantidad_mes_actual():
+    try:
+        # Obtener el mes y año actual
+        mes_actual = datetime.now().month
+        año_actual = datetime.now().year
+
+        # Consulta para obtener los datos con nombre del área y orden de servicio
+        query = """
+            SELECT r.orden_servicio, a.nombre AS area_nombre, r.cantidad_total, r.cantidad_disponible, r.mes
+            FROM reservas_combustible r
+            JOIN areas a ON r.area_id = a.id
+            WHERE r.mes = %s AND r.year = %s
+        """
+        cursor.execute(query, (mes_actual, año_actual))
+        resultados = cursor.fetchall()
+
+        # Formatear los resultados como lista de objetos
+        data = [
+            {
+                "orden_servicio": row[0],
+                "area_nombre": row[1],
+                "cantidad_total": float(row[2]),
+                "cantidad_disponible": float(row[3]),
+                "mes": get_month_name(row[4])
+            }
+            for row in resultados
+        ]
+
+        return jsonify(data)
+
+    except Exception as e:
+        print(f"Error en /graficos/cantidad_mes_actual: {e}")
+        return jsonify({"error": "Error interno del servidor"}), 500
+    
+# Mostrar lista de roles
 @app.route('/roles')
+@login_required
+@requires_roles(1)
 def roles():
     cursor = db.cursor()
     cursor.execute("SELECT id, nombre, descripcion FROM roles")
@@ -363,6 +566,8 @@ def roles():
 
 # 🔵 Crear un nuevo rol
 @app.route('/roles/crear', methods=['POST'])
+@login_required
+@requires_roles(1)
 def crear_rol():
     nombre = request.form['nombre']
     descripcion = request.form['descripcion']
@@ -379,8 +584,10 @@ def crear_rol():
     return redirect(url_for('roles'))
 
 
-# 🟡 Actualizar un rol existente
+# Actualizar un rol existente
 @app.route('/roles/editar/<int:role_id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def editar_rol(role_id):
     nombre = request.form['nombre']
     descripcion = request.form['descripcion']
@@ -402,10 +609,15 @@ def editar_rol(role_id):
     return redirect(url_for('roles'))
 
 
-# 🔴 Eliminar un rol
+# Eliminar un rol
 @app.route('/roles/eliminar/<int:role_id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def eliminar_rol(role_id):
     try:
+        if not db.is_connected():
+            db.reconnect(attempts=3, delay=1)  # Asegura la conexión
+        
         cursor = db.cursor()
         cursor.execute("DELETE FROM roles WHERE id = %s", (role_id,))
         db.commit()
@@ -420,6 +632,8 @@ def eliminar_rol(role_id):
 #Usuarios
 
 @app.route('/usuarios')
+@login_required
+@requires_roles(1)
 def usuarios():
     cursor = db.cursor()
     # Consulta de usuarios
@@ -445,6 +659,8 @@ def usuarios():
 
 
 @app.route('/actualizar_usuario', methods=['POST'])
+@login_required
+@requires_roles(1)
 def actualizar_usuario():
     user_id = request.form['user_id']
     username = request.form['username']
@@ -468,6 +684,8 @@ def actualizar_usuario():
 
 
 @app.route('/cambiar_estado_usuario', methods=['POST'])
+@login_required
+@requires_roles(1)
 def cambiar_estado_usuario():
     user_id = request.form.get('user_id')
     nuevo_estado = request.form.get('nuevo_estado')
@@ -479,11 +697,9 @@ def cambiar_estado_usuario():
     return redirect(url_for('usuarios'))
 
 
-
-
-
-
 @app.route('/eliminar_usuario', methods=['POST'])
+@login_required
+@requires_roles(1)
 def eliminar_usuario():
     if request.method == 'POST':
         user_id = request.form.get('user_id')
@@ -497,20 +713,22 @@ def eliminar_usuario():
 
         flash('Usuario desactivado correctamente.', 'success')
         return redirect(url_for('usuarios'))
-   
-   
     
 #areas
 
 @app.route('/areas', methods=['GET'])
+@login_required
+@requires_roles(1)
 def areas():
     cursor = db.cursor()
-    cursor.execute("SELECT id, nombre, descripcion, jefe_area FROM areas")
+    cursor.execute("SELECT id, nombre, descripcion, jefe_area, estado FROM areas")
     areas = cursor.fetchall()
     return render_template('areas.html', areas=areas)
 
 # Crear área
 @app.route('/areas/crear', methods=['POST'])
+@login_required
+@requires_roles(1)
 def crear_area():
     nombre = request.form['nombre']
     descripcion = request.form['descripcion']
@@ -518,9 +736,9 @@ def crear_area():
 
     cursor = db.cursor()
     cursor.execute("""
-        INSERT INTO areas (nombre, descripcion, jefe_area) 
-        VALUES (%s, %s, %s)
-    """, (nombre, descripcion, jefe_area))
+        INSERT INTO areas (nombre, descripcion, jefe_area, estado) 
+        VALUES (%s, %s, %s, %s)
+    """, (nombre, descripcion, jefe_area, 1))
     db.commit()
 
     flash('Área creada con éxito.', 'success')
@@ -528,46 +746,77 @@ def crear_area():
 
 # Editar área
 @app.route('/areas/editar/<int:area_id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def editar_area(area_id):
     nombre = request.form['nombre']
     descripcion = request.form['descripcion']
     jefe_area = request.form['jefe_area']
+    estado = request.form.get('estado', 1)
 
     cursor = db.cursor()
     cursor.execute("""
         UPDATE areas 
-        SET nombre = %s, descripcion = %s, jefe_area = %s 
+        SET nombre = %s, descripcion = %s, jefe_area = %s, estado = %s
         WHERE id = %s
-    """, (nombre, descripcion, jefe_area, area_id))
+    """, (nombre, descripcion, jefe_area, estado, area_id))
     db.commit()
 
     flash('Área actualizada con éxito.', 'success')
     return redirect(url_for('areas'))
 
 
-# Eliminar área
+# Eliminar área (Inactivar si tiene relaciones)
 @app.route('/areas/eliminar/<int:area_id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def eliminar_area(area_id):
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM areas WHERE id = %s", (area_id,))
-    db.commit()
+    try:
+        cursor = db.cursor()
 
-    flash('Área eliminada con éxito.', 'success')
-    return redirect(url_for('areas'))
+        # Verificar si el área tiene relaciones con otras tablas
+        cursor.execute("""
+            SELECT 
+                (SELECT COUNT(*) FROM vehiculos WHERE area_id = %s) +
+                (SELECT COUNT(*) FROM reservas_combustible WHERE area_id = %s) +
+                (SELECT COUNT(*) FROM registros_combustible WHERE area_id = %s) +
+                (SELECT COUNT(*) FROM users WHERE area_id = %s)
+        """, (area_id, area_id, area_id, area_id))
+        
+        relaciones = cursor.fetchone()[0]
 
+        if relaciones > 0:
+            # Si hay relaciones, solo inactivar el área
+            cursor.execute("UPDATE areas SET estado = 0 WHERE id = %s", (area_id,))
+            mensaje = "Área inactivada correctamente."
+        else:
+            # Si no hay relaciones, eliminar el área definitivamente
+            cursor.execute("DELETE FROM areas WHERE id = %s", (area_id,))
+            mensaje = "Área eliminada correctamente."
 
+        db.commit()
+        cursor.close()
+
+        return jsonify({'success': True, 'message': mensaje})
+
+    except Exception as e:
+        db.rollback()  # 🔄 Revertir cambios en caso de error
+        print(f"Error al eliminar el área: {e}")
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
 
 
 #reservas
 
 # Ruta para listar las reservas
 @app.route('/listar_reservas')
+@login_required
+@requires_roles(1)
 def listar_reservas():
     cursor = db.cursor()
 
     cursor.execute("""
-        SELECT r.id, a.nombre AS area_nombre, r.mes, r.year, 
-            r.cantidad_total, r.cantidad_disponible, r.area_id
+        SELECT r.id, a.nombre AS area_nombre, r.orden_servicio, r.mes, r.year, 
+            r.cantidad_total, r.cantidad_disponible, r.area_id, r.estado
         FROM reservas_combustible r
         JOIN areas a ON r.area_id = a.id
         ORDER BY r.id DESC
@@ -583,13 +832,16 @@ def listar_reservas():
 
 
 @app.route('/reservas/crear', methods=['POST'])
+@login_required
+@requires_roles(1)
 def crear_reserva():
     area_id = request.form.get('area_id')
+    orden_servicio = request.form.get('orden_servicio')
     mes = request.form.get('mes')
     year = request.form.get('year')
     cantidad_total = request.form.get('cantidad_total')
 
-    if not all([area_id, mes, year, cantidad_total]):
+    if not all([area_id, orden_servicio, mes, year, cantidad_total]):
         flash('Todos los campos son obligatorios.', 'error')
         return redirect(url_for('listar_reservas'))
 
@@ -598,30 +850,34 @@ def crear_reserva():
 
     cursor = db.cursor()
     cursor.execute('''
-        INSERT INTO reservas_combustible (area_id, mes, year, cantidad_total, cantidad_disponible, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
-    ''', (area_id, mes, year, cantidad_total, cantidad_disponible))
+        INSERT INTO reservas_combustible (area_id, orden_servicio, mes, year, cantidad_total, cantidad_disponible, estado, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, 1, NOW(), NOW())
+    ''', (area_id, orden_servicio, mes, year, cantidad_total, cantidad_disponible))
     db.commit()
     flash('Reserva creada exitosamente.', 'success')
     return redirect(url_for('listar_reservas'))
 
 
 @app.route('/reservas/editar/<int:id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def editar_reserva(id):
     area_id = request.form['area_id']
+    orden_servicio = request.form['orden_servicio']
     mes = request.form['mes']
     year = request.form['year']
     cantidad_total = request.form['cantidad_total']
     cantidad_disponible = request.form['cantidad_disponible']
+    estado = request.form.get('estado', 1)
 
     cursor = db.cursor()
     updated_at = datetime.now()
 
     cursor.execute("""
         UPDATE reservas_combustible
-        SET area_id = %s, mes = %s, year = %s, cantidad_total = %s, cantidad_disponible = %s, updated_at = %s
+        SET area_id = %s, orden_servicio = %s, mes = %s, year = %s, cantidad_total = %s, cantidad_disponible = %s, estado = %s, updated_at = %s
         WHERE id = %s
-    """, (area_id, mes, year, cantidad_total, cantidad_disponible, updated_at, id))
+    """, (area_id, orden_servicio, mes, year, cantidad_total, cantidad_disponible, estado, updated_at, id))
 
     db.commit()
     cursor.close()
@@ -629,142 +885,133 @@ def editar_reserva(id):
     return redirect(url_for('listar_reservas'))
 
 @app.route('/reservas/eliminar/<int:id>', methods=['POST'])
+@login_required
+@requires_roles(1)
 def eliminar_reserva(id):
-    cursor = db.cursor()
+    try:
+        cursor = db.cursor()
 
-    cursor.execute("DELETE FROM reservas_combustible WHERE id = %s", (id,))
+        # Verificar si hay registros relacionados
+        cursor.execute("SELECT COUNT(*) FROM registro_reservas WHERE reserva_id = %s", (id,))
+        registros_relacionados = cursor.fetchone()[0]
 
-    db.commit()
-    cursor.close()
+        if registros_relacionados > 0:
+            # Si hay registros relacionados, solo inactivar
+            cursor.execute("UPDATE reservas_combustible SET estado = 0 WHERE id = %s", (id,))
+            mensaje = "Reserva inactivada correctamente."
+        else:
+            # Eliminar si no hay registros relacionados
+            cursor.execute("DELETE FROM reservas_combustible WHERE id = %s", (id,))
+            mensaje = "Reserva eliminada permanentemente."
 
-    return redirect(url_for('listar_reservas'))
+        db.commit()
+        cursor.close()
+        return jsonify({'success': True, 'message': mensaje})
+
+    except Exception as e:
+        print(f"Error al eliminar la reserva: {e}")
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
+
+
+
 
 #vehiculos
 
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Crear la carpeta si no existe
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
-@app.route('/vehiculos')
+# Ruta para obtener todos los vehículos
+@app.route('/vehiculos', methods=['GET'])
 def vehiculos():
-    cursor = db.cursor(dictionary=True)
-
-    # Obtener vehículos con área asociada
-    cursor.execute("""
-        SELECT v.id, v.modelo, v.marca, v.anio, v.numero_placa, v.capacidad, v.imagen_url, v.area_id, a.nombre AS area_nombre
+    sql = """
+        SELECT v.id, v.numero_placa, v.modelo, v.marca, v.capacidad, v.anio, 
+               v.estado, v.area_id, a.nombre AS area
         FROM vehiculos v
-        INNER JOIN areas a ON v.area_id = a.id
-    """)
-    vehiculos = cursor.fetchall()
+        JOIN areas a ON v.area_id = a.id
+        ORDER BY v.id DESC  -- Orden descendente
+    """
+    cursor.execute(sql)
+    columnas = [col[0] for col in cursor.description]  # Obtener nombres de columnas
+    vehiculos = [dict(zip(columnas, row)) for row in cursor.fetchall()]
 
-    # Obtener todas las áreas para el formulario
+    # Obtener todas las áreas para el select
     cursor.execute("SELECT id, nombre FROM areas")
     areas = cursor.fetchall()
 
-    cursor.close()
-
     return render_template('vehiculos.html', vehiculos=vehiculos, areas=areas)
 
-# Ruta para crear un vehículo
-@app.route('/vehiculos/crear', methods=['POST'])
-def crear_vehiculo():
-    cursor = db.cursor()
 
-    area_id = request.form['area_id']
+# Ruta para agregar un vehículo
+@app.route('/vehiculos/add', methods=['POST'])
+def add_vehiculo():
     numero_placa = request.form['numero_placa']
     modelo = request.form['modelo']
     marca = request.form['marca']
     capacidad = request.form['capacidad']
     anio = request.form['anio']
-    imagen = request.files.get('imagen')
+    area_id = request.form['area_id']  
+    estado = request.form.get('estado', 1)  # 1 por defecto (Activo)
 
-    imagen_url = None
-    if imagen and allowed_file(imagen.filename):
-        filename = secure_filename(imagen.filename)
-        imagen_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        imagen.save(imagen_path)
-        imagen_url = filename
-
-    try:
-        query = """
-            INSERT INTO vehiculos (area_id, numero_placa, modelo, marca, capacidad, anio, imagen_url) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(query, (area_id, numero_placa, modelo, marca, capacidad, anio, imagen_url))
-        db.commit()
-        flash('Vehículo creado con éxito', 'success')
-    except Exception as e:
-        db.rollback()
-        flash(f'Error al crear el vehículo: {str(e)}', 'danger')
-
-    cursor.close()
+    sql = """
+        INSERT INTO vehiculos (area_id, numero_placa, modelo, marca, capacidad, anio, estado)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    cursor.execute(sql, (area_id, numero_placa, modelo, marca, capacidad, anio, estado))
+    db.commit()
+    flash('Vehículo agregado exitosamente', 'success')
     return redirect(url_for('vehiculos'))
 
 # Ruta para editar un vehículo
-@app.route('/vehiculos/editar/<int:id>', methods=['POST'])
-def editar_vehiculo(id):
-    cursor = db.cursor()
+@app.route('/vehiculos/edit/<int:id>', methods=['GET', 'POST'])
+def edit_vehiculo(id):
+    if request.method == 'POST':
+        numero_placa = request.form['numero_placa']
+        modelo = request.form['modelo']
+        marca = request.form['marca']
+        capacidad = request.form['capacidad']
+        anio = request.form['anio']
+        area_id = request.form['area_id']
+        estado = request.form.get('estado', 1)  
 
-    area_id = request.form['area_id']
-    numero_placa = request.form['numero_placa']
-    modelo = request.form['modelo']
-    marca = request.form['marca']
-    capacidad = request.form['capacidad']
-    anio = request.form['anio']
-    imagen = request.files.get('imagen')
-
-    try:
-        if imagen and allowed_file(imagen.filename):
-            filename = secure_filename(imagen.filename)
-            imagen_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            imagen.save(imagen_path)
-            imagen_url = filename
-
-            query = """
-                UPDATE vehiculos 
-                SET area_id=%s, numero_placa=%s, modelo=%s, marca=%s, capacidad=%s, anio=%s, imagen_url=%s 
-                WHERE id=%s
-            """
-            cursor.execute(query, (area_id, numero_placa, modelo, marca, capacidad, anio, imagen_url, id))
-        else:
-            query = """
-                UPDATE vehiculos 
-                SET area_id=%s, numero_placa=%s, modelo=%s, marca=%s, capacidad=%s, anio=%s
-                WHERE id=%s
-            """
-            cursor.execute(query, (area_id, numero_placa, modelo, marca, capacidad, anio, id))
-
+        sql = """
+            UPDATE vehiculos 
+            SET area_id = %s, numero_placa = %s, modelo = %s, marca = %s, 
+                capacidad = %s, anio = %s, estado = %s 
+            WHERE id = %s
+        """
+        cursor.execute(sql, (area_id, numero_placa, modelo, marca, capacidad, anio, estado, id))
         db.commit()
-        flash('Vehículo actualizado con éxito', 'success')
-    except Exception as e:
-        db.rollback()
-        flash(f'Error al actualizar el vehículo: {str(e)}', 'danger')
+        flash('Vehículo actualizado correctamente', 'success')
+        return redirect(url_for('vehiculos'))
+    
+    # Si es GET, obtener datos del vehículo
+    cursor.execute("SELECT * FROM vehiculos WHERE id = %s", (id,))
+    vehiculo = cursor.fetchone()
 
-    cursor.close()
-    return redirect(url_for('vehiculos'))
+    # Obtener todas las áreas para el select
+    cursor.execute("SELECT id, nombre FROM areas")
+    areas = cursor.fetchall()
+
+    return render_template('editar_vehiculo.html', vehiculo=vehiculo, areas=areas)
 
 # Ruta para eliminar un vehículo
-@app.route('/vehiculos/eliminar/<int:id>', methods=['POST'])
-def eliminar_vehiculo(id):
-    cursor = db.cursor()
-    try:
+@app.route('/vehiculos/delete/<int:id>', methods=['POST'])
+def delete_vehiculo(id):
+    # Verificar si el vehículo tiene registros en 'registros_combustible'
+    cursor.execute("""
+        SELECT COUNT(*) FROM registros_combustible WHERE vehiculo_id = %s
+    """, (id,))
+    registros_relacionados = cursor.fetchone()[0]
+
+    if registros_relacionados > 0:
+        # Si tiene registros relacionados, solo cambiar el estado a inactivo
+        cursor.execute("UPDATE vehiculos SET estado = 0 WHERE id = %s", (id,))
+        db.commit()
+        return jsonify({'success': True, 'message': 'Vehículo inactivado correctamente', 'inactivated': True})
+    else:
+        # Si no tiene registros relacionados, eliminarlo completamente
         cursor.execute("DELETE FROM vehiculos WHERE id = %s", (id,))
         db.commit()
-        flash('Vehículo eliminado con éxito', 'success')
-    except Exception as e:
-        db.rollback()
-        flash(f'Error al eliminar el vehículo: {str(e)}', 'danger')
+    return jsonify({'success': True, 'message': 'Vehículo eliminado permanentemente', 'inactivated': False})
 
-    cursor.close()
-    return redirect(url_for('vehiculos'))
+
 
 
 
@@ -799,6 +1046,7 @@ def allowed_file(filename):
 
 @app.route('/formulario_combustible', methods=['GET'])
 @login_required
+@requires_roles(1,2) 
 def formulario_combustible():
     cursor = db.cursor(dictionary=True)
 
@@ -811,21 +1059,24 @@ def formulario_combustible():
     cursor.execute("SELECT id, modelo FROM vehiculos")
     vehiculos = cursor.fetchall()
 
-    # Obtener reservas con cantidad disponible
+    mes_actual = datetime.now().month
+    #reservas
     cursor.execute("""
-        SELECT id, cantidad_disponible, orden_servicio 
-        FROM reservas_combustible 
-        WHERE cantidad_disponible > 0
-    """)
-    reservas = cursor.fetchall()
+        SELECT r.id, r.cantidad_disponible, r.orden_servicio, a.nombre AS nombre_area, r.mes
+        FROM reservas_combustible r
+        JOIN areas a ON r.area_id = a.id
+        WHERE r.mes = %s
+    """, (mes_actual,))
 
-    cursor.close()
+    reservas = cursor.fetchall()
+    
 
     return render_template('registrocombustible.html', area_id=area_id, vehiculos=vehiculos, reservas=reservas)
 
 
 @app.route('/registrar_combustible', methods=['POST'])
 @login_required
+@requires_roles(1,2) 
 def registrar_combustible():
     cursor = db.cursor(dictionary=True)
 

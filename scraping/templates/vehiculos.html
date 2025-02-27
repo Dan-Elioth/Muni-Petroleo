@@ -1,151 +1,259 @@
 {% extends 'layout.html' %}
 
-{% block title %}Administrar Vehículos{% endblock %}
+{% block title %}Administrar Usuarios{% endblock %}
 
 {% block content %}
+<div class="px-4 sm:px-10">
+    <div class="">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Gestión de Vehículos</h1>
 
-<div class="min-w-screen h-screen ">
-    <div class="absolute bg-black opacity-80 inset-0"></div>
-    <div class="relative flex flex-col items-center justify-center">
-        <button onclick="openModal('crearModal')" class="bg-green-600 text-white px-4 py-2 rounded-full mb-4">Agregar Vehículo</button>
+        <div class="flex justify-end mb-6">
+        <!-- Botón para abrir el modal de agregar vehículo -->
+            <button onclick="openModal('addModal')"  class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition duration-300 text-lg">Agregar Vehículo</button>
+        </div>
+        <!-- Tabla de Vehículos -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-blue-500 text-white">
+                    <tr>
+                        <th class="py-3 px-6 text-center">Placa</th>
+                        <th class="py-3 px-6 text-center">Modelo</th>
+                        <th class="py-3 px-6 text-center">Marca</th>
+                        <th class="py-3 px-6 text-center">Capacidad</th>
+                        <th class="py-3 px-6 text-center">Año</th>
+                        <th class="py-3 px-6 text-center">Área</th>
+                        <th class="py-3 px-6 text-center">Estado</th>
+                        <th class="py-3 px-6 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vehiculo in vehiculos %}
+                    <tr class="text-center">
+                        <td class="py-4 px-6">{{ vehiculo.numero_placa }}</td>
+                        <td class="py-4 px-6">{{ vehiculo.modelo }}</td>
+                        <td class="py-4 px-6">{{ vehiculo.marca }}</td>
+                        <td class="py-4 px-62">{{ vehiculo.capacidad }}</td>
+                        <td class="py-4 px-6">{{ vehiculo.anio }}</td>
+                        <td class="py-4 px-6">{{ vehiculo.area }}</td>
+                        <td class="py-4 px-6">
+                            {% if vehiculo.estado == 1 %}
+                                <span class="text-green-500 font-bold">Activo</span>
+                            {% else %}
+                                <span class="text-red-500 font-bold">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class=" py-4 px-6 flex justify-center gap-4">
+                            <!-- Botón Editar -->
+                            <button onclick="openEditModal({{ vehiculo.id }}, '{{ vehiculo.numero_placa }}', '{{ vehiculo.modelo }}', '{{ vehiculo.marca }}', '{{ vehiculo.capacidad }}', '{{ vehiculo.anio }}', '{{ vehiculo.area_id }}', {{ vehiculo.estado }})"
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-3 py-1 rounded-lg flex items-center">
+                                ✏️ Editar
+                            </button>
+                        
+                            <!-- Botón Eliminar -->
+                            <button type="button" onclick="confirmDelete({{ vehiculo.id }})"
+                                class="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-1 rounded-lg flex items-center">
+                                🗑️ Eliminar
+                            </button>
+                        </td>
+                        
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <div class="grid mt-8 gap-8 grid-cols-1 md:grid-cols-2 xl:grid-cols-2">
-            {% for vehiculo in vehiculos %}
-            <div class="flex flex-col">
-                <div class="bg-white shadow-md rounded-3xl p-4">
-                    <div class="flex-none lg:flex">
-                        <div class="h-full w-full lg:h-48 lg:w-48 lg:mb-0 mb-3">
-                            <img src="{{ url_for('static', filename='uploads/' + vehiculo.imagen_url) }}" alt="Vehículo" class="w-full object-cover lg:h-48 rounded-2xl">
+        <!-- Modal para Agregar Vehículo -->
+        <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 mt-20">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
+        
+                <!-- Botón de cierre -->
+                <button onclick="closeModal('addModal')" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">&times;</button>
+        
+                <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Agregar Vehículo</h2>
+        
+                <form action="{{ url_for('add_vehiculo') }}" method="POST" class="space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+                        <div>
+                            <label for="numero_placa" class="block text-sm font-medium mb-1">Número de Placa:</label>
+                            <input type="text" name="numero_placa" id="numero_placa" placeholder="Número de Placa" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
                         </div>
-                        <div class="flex-auto ml-3 justify-evenly py-2">
-                            <div class="flex flex-wrap">
-                                <div class="w-full flex-none text-xs text-blue-700 font-medium">{{ vehiculo.marca }}</div>
-                                <h2 class="flex-auto text-lg font-medium">{{ vehiculo.modelo }}</h2>
-                            </div>
-                            <div class="text-sm text-gray-500">Año: {{ vehiculo.anio }}</div>
-                            <div class="text-sm text-gray-500">Placa: {{ vehiculo.numero_placa }}</div>
-                            <div class="text-sm text-gray-500">Capacidad: {{ vehiculo.capacidad }}</div>
-                            <div class="text-sm text-gray-500">Área: {{ vehiculo.area_nombre }}</div>
-                            <div class="flex p-4 pb-2 border-t border-gray-200"></div>
-                            <div class="flex space-x-3 text-sm font-medium">
-                                <button onclick="openEditModal({{ vehiculo.id }}, '{{ vehiculo.modelo }}', '{{ vehiculo.marca }}', '{{ vehiculo.anio }}', '{{ vehiculo.numero_placa }}', '{{ vehiculo.capacidad }}', '{{ vehiculo.area_id }}')" class="bg-gray-900 px-5 py-2 text-white rounded-full">Editar</button>
-                                <button onclick="openDeleteModal({{ vehiculo.id }})" class="bg-red-600 px-5 py-2 text-white rounded-full">Eliminar</button>
-                            </div>
+        
+                        <div>
+                            <label for="modelo" class="block text-sm font-medium mb-1">Modelo:</label>
+                            <input type="text" name="modelo" id="modelo" placeholder="Modelo" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="marca" class="block text-sm font-medium mb-1">Marca:</label>
+                            <input type="text" name="marca" id="marca" placeholder="Marca" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="capacidad" class="block text-sm font-medium mb-1">Capacidad:</label>
+                            <input type="number" name="capacidad" id="capacidad" placeholder="Capacidad" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="anio" class="block text-sm font-medium mb-1">Año:</label>
+                            <input type="number" name="anio" id="anio" placeholder="Año" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="area_id" class="block text-sm font-medium mb-1">Área:</label>
+                            <select name="area_id" id="area_id" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                                <option value="" disabled selected>Seleccione un Área</option>
+                                {% for area in areas %}
+                                    <option value="{{ area[0] }}">{{ area[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+        
+                        <div class="lg:col-span-2">
+                            <label for="estado" class="block text-sm font-medium mb-1">Estado:</label>
+                            <select name="estado" id="estado" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                                <option value="1" selected>Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
+                        </div>
+        
+                    </div>
+        
+                    <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                        <button type="button" onclick="closeModal('addModal')" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">Guardar</button>
+                    </div>
+                </form>
+        
+            </div>
+        </div>
+        
+        
+
+        <!-- Modal para Editar Vehículo -->
+        <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 mt-20">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
+        
+                <!-- Botón de cierre -->
+                <button onclick="closeModal('editModal')" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">&times;</button>
+        
+                <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Editar Vehículo</h2>
+        
+                <form id="editForm" method="POST" class="space-y-4">
+                    <input type="hidden" id="edit_id" name="id">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit_numero_placa" class="block text-sm font-medium mb-1">Número de Placa:</label>
+                            <input type="text" id="edit_numero_placa" name="numero_placa" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="edit_modelo" class="block text-sm font-medium mb-1">Modelo:</label>
+                            <input type="text" id="edit_modelo" name="modelo" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="edit_marca" class="block text-sm font-medium mb-1">Marca:</label>
+                            <input type="text" id="edit_marca" name="marca" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="edit_capacidad" class="block text-sm font-medium mb-1">Capacidad:</label>
+                            <input type="number" id="edit_capacidad" name="capacidad" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="edit_anio" class="block text-sm font-medium mb-1">Año:</label>
+                            <input type="number" id="edit_anio" name="anio" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                        </div>
+        
+                        <div>
+                            <label for="edit_area_id" class="block text-sm font-medium mb-1">Área:</label>
+                            <select id="edit_area_id" name="area_id" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                                {% for area in areas %}
+                                    <option value="{{ area[0] }}">{{ area[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+        
+                        <div class="md:col-span-2">
+                            <label for="edit_estado" class="block text-sm font-medium mb-1">Estado:</label>
+                            <select id="edit_estado" name="estado" required class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
                         </div>
                     </div>
-                </div>
+        
+                    <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                        <button type="button" onclick="closeModal('editModal')" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">Guardar</button>
+                    </div>
+                </form>
             </div>
-            {% endfor %}
         </div>
+
+        
     </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openEditModal(id, placa, modelo, marca, capacidad, anio, area_id, estado) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('edit_numero_placa').value = placa;
+            document.getElementById('edit_modelo').value = modelo;
+            document.getElementById('edit_marca').value = marca;
+            document.getElementById('edit_capacidad').value = capacidad;
+            document.getElementById('edit_anio').value = anio;
+            document.getElementById('edit_area_id').value = area_id;
+            document.getElementById('edit_estado').value = estado;
+
+            document.getElementById('editForm').action = `/vehiculos/edit/${id}`;
+            openModal('editModal');
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(id) {
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "Si hay registros ligados, solo se desactivará.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/vehiculos/delete/${id}`, { method: "POST" })
+                    .then(response => response.json())
+                    .then(data => {
+                        Swal.fire({
+                            title: "Éxito",
+                            text: data.message,
+                            icon: "success",
+                            timer: 2000
+                        }).then(() => {
+                            location.reload(); // Recargar la página
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire("Error", "Hubo un problema con la eliminación", "error");
+                    });
+                }
+            });
+        }
+    </script>
+    
 </div>
-
-<!-- Modal de Crear Vehículo -->
-<div id="crearModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
-        <h2 class="text-lg font-bold mb-4">Agregar Vehículo</h2>
-        <form action="{{ url_for('crear_vehiculo') }}" method="POST" enctype="multipart/form-data">
-            <label>Modelo:</label>
-            <input type="text" name="modelo" class="border p-2 w-full mb-2">
-            
-            <label>Marca:</label>
-            <input type="text" name="marca" class="border p-2 w-full mb-2">
-            
-            <label>Año:</label>
-            <input type="number" name="anio" class="border p-2 w-full mb-2">
-            
-            <label>Número de Placa:</label>
-            <input type="text" name="numero_placa" class="border p-2 w-full mb-2">
-            
-            <label>Capacidad:</label>
-            <input type="number" name="capacidad" class="border p-2 w-full mb-2">
-            
-            <label>Área:</label>
-            <select name="area_id" class="border p-2 w-full mb-2">
-                {% for area in areas %}
-                <option value="{{ area.id }}">{{ area.nombre }}</option>
-                {% endfor %}
-            </select>
-
-            <label>Imagen:</label>
-            <input type="file" name="imagen" class="border p-2 w-full mb-2">
-
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
-            <button type="button" onclick="closeModal('crearModal')" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-        </form>
-    </div>
-</div>
-
-<!-- Modal de Editar Vehículo -->
-<div id="editarModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
-        <h2 class="text-lg font-bold mb-4">Editar Vehículo</h2>
-        <form id="editForm" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="id" id="editId">
-            
-            <label>Modelo:</label>
-            <input type="text" name="modelo" id="editModelo" class="border p-2 w-full mb-2">
-            
-            <label>Marca:</label>
-            <input type="text" name="marca" id="editMarca" class="border p-2 w-full mb-2">
-            
-            <label>Año:</label>
-            <input type="number" name="anio" id="editAnio" class="border p-2 w-full mb-2">
-            
-            <label>Número de Placa:</label>
-            <input type="text" name="numero_placa" id="editNumeroPlaca" class="border p-2 w-full mb-2">
-            
-            <label>Capacidad:</label>
-            <input type="number" name="capacidad" id="editCapacidad" class="border p-2 w-full mb-2">
-            
-            <label>Área:</label>
-            <select name="area_id" id="editArea" class="border p-2 w-full mb-2">
-                {% for area in areas %}
-                <option value="{{ area.id }}">{{ area.nombre }}</option>
-                {% endfor %}
-            </select>
-
-            <label>Imagen:</label>
-            <input type="file" name="imagen" class="border p-2 w-full mb-2">
-
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Actualizar</button>
-            <button type="button" onclick="closeModal('editarModal')" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-        </form>
-    </div>
-</div>
-
-<!-- Modal de Confirmación para Eliminar -->
-<div id="eliminarModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
-        <h2 class="text-lg font-bold mb-4">¿Estás seguro de eliminar?</h2>
-        <form id="deleteForm" method="POST">
-            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Eliminar</button>
-            <button type="button" onclick="closeModal('eliminarModal')" class="bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
-        </form>
-    </div>
-</div>
-
-<script>
-function openModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-}
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-function openEditModal(id, modelo, marca, anio, numero_placa, capacidad, area_id) {
-    document.getElementById("editForm").action = "/vehiculos/editar/" + id;
-    document.getElementById("editModelo").value = modelo;
-    document.getElementById("editMarca").value = marca;
-    document.getElementById("editAnio").value = anio;
-    document.getElementById("editNumeroPlaca").value = numero_placa;
-    document.getElementById("editCapacidad").value = capacidad;
-    document.getElementById("editArea").value = area_id;
-    openModal('editarModal');
-}
-function openDeleteModal(id) {
-    document.getElementById("deleteForm").action = "/vehiculos/eliminar/" + id;
-    openModal('eliminarModal');
-}
-</script>
-
 {% endblock %}

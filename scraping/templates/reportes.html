@@ -1,159 +1,99 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes de Noticias</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 text-gray-900">
+{% extends 'layout.html' %}
 
-    <!-- Sidebar -->
-    <div class="flex min-h-screen">
-        <nav class="bg-blue-900 text-white w-full md:w-64 space-y-6 py-6 px-4 md:py-7 md:px-2">
-            <!-- Información del Usuario -->
-            <div class="text-center mb-6">
-                <p class="text-lg font-bold">Bienvenido,</p>
-                <p class="text-xl font-semibold">{{ current_user.username }}</p>
-                <p class="text-sm italic">Rol: 
-                    {% if current_user.role_id == 1 %} Administrador
-                    {% elif current_user.role_id == 2 %} Usuario Premium
-                    {% elif current_user.role_id == 3 %} Usuario Regular
-                    {% else %} Invitado
-                    {% endif %}
-                </p>
-            </div>
-            
-            <!-- Navegación -->
-            <ul class="mt-4 space-y-4">
-                <li>
-                    <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
-                        Inicio
-                    </a>
-                </li>
-                
-                {% if current_user.role_id in [1, 2, 3] %}
-                <li>
-                    <a href="/estadisticas" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
-                        Ver Estadísticas
-                    </a>
-                </li>
-                {% endif %}
-                
-                {% if current_user.role_id in [1, 2, 3] %}
-                <li>
-                    <a href="/reportes" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-blue-700">
-                        Ver Reportes
-                    </a>
-                </li>
-                {% endif %}
-                
-                <li>
-                    <a href="{{ url_for('logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-red-700 bg-red-500">
-                        Logout
-                    </a>
-                </li>
-            </ul>
-        </nav>
+{% block title %}Reportes{% endblock %}
 
-        <div class="container mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
-            <h2 class="text-4xl font-bold text-center mb-8">Seleccionar Rango de Fechas, Diario y Categoría</h2>
-    
-            <!-- Botones para descargar CSV o PDF en la parte superior -->
-            <div class="flex justify-center mb-4">
-                <a href="/descargar_reporte_csv?fecha_inicio={{ request.form['fecha_inicio'] }}&fecha_fin={{ request.form['fecha_fin'] }}&diario={{ request.form['diario'] }}&categoria={{ request.form['categoria'] }}" 
-                   class="bg-green-500 text-white py-2 px-5 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
-                   Descargar CSV
-                </a>               
-                <a href="/descargar_pdf?fecha_inicio={{ request.form['fecha_inicio'] }}&fecha_fin={{ request.form['fecha_fin'] }}&diario={{ request.form['diario'] }}&categoria={{ request.form['categoria'] }}" 
-                   class="bg-red-500 text-white py-2 px-5 rounded hover:bg-red-700 ml-4">
-                   Descargar PDF
-                </a>
-            </div>
-    
-            <!-- Formulario para seleccionar rango de fechas, diario y categoría -->
-            <form method="POST" action="/reportes">
-                <div class="flex justify-center space-x-4 mb-4">
-                    <!-- Fecha Inicio -->
-                    <div>
-                        <label for="fecha_inicio" class="block text-lg font-semibold mb-2">Fecha Inicio:</label>
-                        <input type="date" id="fecha_inicio" name="fecha_inicio" class="p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <!-- Fecha Fin -->
-                    <div>
-                        <label for="fecha_fin" class="block text-lg font-semibold mb-2">Fecha Fin:</label>
-                        <input type="date" id="fecha_fin" name="fecha_fin" class="p-2 border border-gray-300 rounded-lg">
-                    </div>
-                    <!-- Categoría -->
-                    <div>
-                        <label for="categoria" class="block text-lg font-semibold mb-2">Categoría:</label>
-                        <select id="categoria" name="categoria" class="p-2 border border-gray-300 rounded-lg">
-                            <option value="">Todas las categorías</option>
-                            {% for categoria in categorias %}
-                                <option value="{{ categoria }}">{{ categoria }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <!-- Diario -->
-                    <div>
-                        <label for="diario" class="block text-lg font-semibold mb-2">Diario:</label>
-                        <select id="diario" name="diario" class="p-2 border border-gray-300 rounded-lg">
-                            <option value="">Todos los diarios</option>
-                            {% for diario in diarios %}
-                                {% if current_user.role_id == 3 %}
-                                    {% if diario in ['Diario Sin Fronteras', 'Diario Correo'] %}
-                                        <option value="{{ diario }}">{{ diario }}</option>
-                                    {% endif %}
-                                {% else %}
-                                    <option value="{{ diario }}">{{ diario }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            
-                <!-- Botón para generar reporte -->
-                <div class="flex justify-center">
-                    <button type="submit" class="bg-blue-500 text-white py-2 px-5 rounded hover:bg-blue-700">
-                        Generar Reporte
-                    </button>
-                </div>
-            </form>
-            
-    
-            <!-- Tabla de noticias si se han seleccionado -->
-            {% if noticias %}
-                <h3 class="text-2xl font-semibold mt-8">Noticias Encontradas:</h3>
-                <table class="table-auto w-full mt-4">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2">ID</th>
-                            <th class="px-4 py-2">Título</th>
-                            <th class="px-4 py-2">Fecha</th>
-                            <th class="px-4 py-2">Fuente</th>
-                            <th class="px-4 py-2">Categoría</th>
-                            <th class="px-4 py-2">Resumen</th>
-                            <th class="px-4 py-2">Diario</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for noticia in noticias %}
-                            <tr>
-                                <td class="border px-4 py-2">{{ noticia[0] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[1] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[2] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[5] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[7] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[3] }}</td>
-                                <td class="border px-4 py-2">{{ noticia[9] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                
-            {% endif %}
+{% block content %}
+
+<div class="px-4 sm:px-10">
+    <div class="bg-white p-6 rounded-lg shadow-lg overflow-hidden">
+        <h6 class="text-xl font-semibold text-blue-gray-900 mb-4">Reporte de Consumo de Combustible</h6>
+      
+        <div class="flex items-center gap-4 mb-4">
+          <!-- Filtro por Área (Solo para admin) -->
+          {% if current_user.role_id == 1 %}
+          <select id="filtroArea" class="p-2 border rounded-lg">
+            <option value="">Todas las áreas</option>
+            {% for area in areas %}
+              <option value="{{ area }}">{{ area }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+
+          <!-- Búsqueda Instantánea -->
+          <input id="busqueda" type="text" placeholder="Buscar..." class="p-2 border rounded-lg"/>
+          <a href="{{ url_for('exportar_pdf', area=area_filtro) }}" class="btn btn-danger">
+            📄 Descargar PDF
+        </a>
+        
+
         </div>
-    </div>
-</body>
-</html>
+
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[540px] table-auto" id="tablaConsumo">
+            <thead>
+              <tr class="bg-blue-gray-50">
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Área</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Usuario</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Vehículo</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Mes</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Cantidad (L)</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Documento</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Reservas</th>
+                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-gray-600">Fecha de Actualización</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for area, usuario, vehiculo, mes, cantidad, documento, reservas, fecha in detalles_consumo %}
+              <tr class="fila">
+                <td class="py-3 px-4 border-b">{{ area }}</td>
+                <td class="py-3 px-4 border-b">{{ usuario }}</td>
+                <td class="py-3 px-4 border-b">{{ vehiculo }}</td>
+                <td class="py-3 px-4 border-b">{{ mes }}</td>
+                <td class="py-3 px-4 border-b">{{ cantidad }}</td>
+                <td class="py-3 px-4 border-b">
+                  {% if documento %}
+                    <a href="{{ documento }}" class="text-blue-500 hover:underline" target="_blank">Ver documento</a>
+                  {% else %}
+                    No disponible
+                  {% endif %}
+                </td>
+                <td class="py-3 px-4 border-b">{{ fecha }}</td>
+                <td class="py-3 px-4 border-b">{{ reservas }}</td>
+                
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const filtroArea = document.getElementById('filtroArea');
+          const busqueda = document.getElementById('busqueda');
+          const filas = document.querySelectorAll('.fila');
+
+          function filtrarTabla() {
+            const areaSeleccionada = filtroArea ? filtroArea.value.toLowerCase() : '';
+            const textoBusqueda = busqueda.value.toLowerCase();
+
+            filas.forEach(fila => {
+              const area = fila.children[0].textContent.toLowerCase();
+              const contenidoFila = fila.textContent.toLowerCase();
+
+              const coincideArea = !areaSeleccionada || area === areaSeleccionada;
+              const coincideBusqueda = contenidoFila.includes(textoBusqueda);
+
+              fila.style.display = coincideArea && coincideBusqueda ? '' : 'none';
+            });
+          }
+
+          if (filtroArea) filtroArea.addEventListener('change', filtrarTabla);
+          busqueda.addEventListener('input', filtrarTabla);
+        });
+      </script>
+
+</div>
+
+{% endblock %}

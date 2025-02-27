@@ -4,6 +4,7 @@
 
 {% block content %}
 
+<div class="px-10 overflow-x-auto w-full" >
 <div class="px-4 sm:px-10">
 <h1 class="text-2xl font-bold mb-6">Administrar Usuarios</h1>
 
@@ -12,35 +13,35 @@
         + Crear Usuario
     </a>
 </div>
-
+<div class="overflow-x-auto">
 <!-- Tabla de usuarios -->
-<table class="w-full border-collapse border border-gray-300 shadow-sm">
-    <thead>
-        <tr class="bg-blue-100 text-left">
-            <th class="p-3">ID</th>
-            <th class="p-3">Usuario</th>
-            <th class="p-3">Nombre</th>
-            <th class="p-3">Apellido Paterno</th>
-            <th class="p-3">Apellido Materno</th>
-            <th class="p-3">Rol</th>
-            <th class="p-3">Área</th>
-            <th class="p-3">Estado</th>
-            <th class="p-3">Acciones</th>
+<table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+    <thead class="bg-blue-500 text-white">
+        <tr>
+            <th class="py-3 px-6 text-center">ID</th>
+            <th class="py-3 px-6 text-center">Usuario</th>
+            <th class="py-3 px-6 text-center">Nombre</th>
+            <th class="py-3 px-6 text-center">Apellido Paterno</th>
+            <th class="py-3 px-6 text-center">Apellido Materno</th>
+            <th class="py-3 px-6 text-center">Rol</th>
+            <th class="py-3 px-6 text-center">Área</th>
+            <th class="py-3 px-6 text-center">Estado</th>
+            <th class="py-3 px-6 text-center">Acciones</th>
         </tr>
     </thead>
     <tbody>
         {% for usuario in usuarios %}
-        <tr class="hover:bg-gray-100">
-            <td class="p-3">{{ usuario[0] }}</td>
-            <td class="p-3">{{ usuario[1] }}</td>
-            <td class="p-3">{{ usuario[2] }}</td>
-            <td class="p-3">{{ usuario[3] }}</td>
-            <td class="p-3">{{ usuario[4] }}</td>
-            <td class="p-3">{{ usuario[8] }}</td> <!-- Nombre del rol -->
-            <td class="p-3">{{ usuario[9] }}</td> <!-- Nombre del área -->
+        <tr class="hover:bg-gray-100 text-center">
+            <td class="py-4 px-6">{{ usuario[0] }}</td>
+            <td class="py-4 px-6">{{ usuario[1] }}</td>
+            <td class="py-4 px-6">{{ usuario[2] }}</td>
+            <td class="py-4 px-6">{{ usuario[3] }}</td>
+            <td class="py-4 px-6">{{ usuario[4] }}</td>
+            <td class="py-4 px-6">{{ usuario[8] }}</td>
+            <td class="py-4 px-6">{{ usuario[9] }}</td>
 
             <!-- Mostrar estado como "Activo" o "Inactivo" -->
-            <td class="p-3">
+            <td class="py-4 px-6">
                 {% if usuario[7] == 1 %}
                     <span class="text-green-600 font-semibold">Activo</span>
                 {% else %}
@@ -67,48 +68,75 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <!-- Modal de edición -->
-<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg w-full max-w-2xl">
-        <h2 class="text-xl font-bold mb-6">Editar Usuario</h2>
-        <form id="formEditar" action="{{ url_for('actualizar_usuario') }}" method="POST">
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 mt-20">
+    <div class="bg-white p-6 md:p-8 rounded-lg w-full max-w-[85%] md:max-w-2xl shadow-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
+        
+        <!-- Botón de cierre -->
+        <button onclick="cerrarModal()" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">
+            &times;
+        </button>
+
+        <h2 class="text-xl font-bold mb-4 md:mb-6 text-center">Editar Usuario</h2>
+
+        <form id="formEditar" action="{{ url_for('actualizar_usuario') }}" method="POST" class="space-y-4">
 
             <input type="hidden" name="user_id" id="edit_user_id">
 
-            <label class="block mb-2">Usuario:</label>
-            <input type="text" name="username" id="edit_username" class="border p-2 w-full mb-4 rounded-lg" required>
+            <div>
+                <label class="block text-sm font-medium mb-1">Usuario:</label>
+                <input type="text" name="username" id="edit_username" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <label class="block mb-2">Nombre:</label>
-            <input type="text" name="nombres" id="edit_nombres" class="border p-2 w-full mb-4 rounded-lg" required>
+            <div>
+                <label class="block text-sm font-medium mb-1">Nombre:</label>
+                <input type="text" name="nombres" id="edit_nombres" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+            </div>
 
-            <label class="block mb-2">Apellido Paterno:</label>
-            <input type="text" name="apellido_paterno" id="edit_apellido_paterno" class="border p-2 w-full mb-4 rounded-lg" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Apellido Paterno:</label>
+                    <input type="text" name="apellido_paterno" id="edit_apellido_paterno" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Apellido Materno:</label>
+                    <input type="text" name="apellido_materno" id="edit_apellido_materno" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200">
+                </div>
+            </div>
 
-            <label class="block mb-2">Apellido Materno:</label>
-            <input type="text" name="apellido_materno" id="edit_apellido_materno" class="border p-2 w-full mb-4 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Rol:</label>
+                    <select name="rol" id="edit_rol" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                        {% for rol in roles %}
+                            <option value="{{ rol[0] }}">{{ rol[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Área:</label>
+                    <select name="area" id="edit_area" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                        {% for area in areas %}
+                            <option value="{{ area[0] }}">{{ area[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-            <label class="block mb-2">Rol:</label>
-            <select name="rol" id="edit_rol" class="border p-2 w-full mb-4 rounded-lg" required>
-                {% for rol in roles %}
-                    <option value="{{ rol[0] }}">{{ rol[1] }}</option>
-                {% endfor %}
-            </select>
-
-            <label class="block mb-2">Área:</label>
-            <select name="area" id="edit_area" class="border p-2 w-full mb-4 rounded-lg" required>
-                {% for area in areas %}
-                    <option value="{{ area[0] }}">{{ area[1] }}</option>
-                {% endfor %}
-            </select>
-
-            <div class="flex justify-end gap-4 mt-4">
-                <button type="button" onclick="cerrarModal()" class="bg-gray-400 px-4 py-2 rounded-lg hover:bg-gray-500 transition">Cancelar</button>
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">Guardar</button>
+            <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                <button type="button" onclick="cerrarModal()" class="bg-gray-400 px-4 py-2 rounded-lg hover:bg-gray-500 transition w-full md:w-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition w-full md:w-auto">
+                    Guardar
+                </button>
             </div>
         </form>
     </div>
 </div>
+
 
 <!-- Scripts para el modal -->
 <script>
@@ -131,6 +159,8 @@
         document.getElementById('modalEditar').classList.add('hidden');
     }
 </script>
+</div>
+
 </div>
 
 {% endblock %}

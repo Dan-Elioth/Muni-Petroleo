@@ -19,10 +19,12 @@
             <tr>
                 <th class="py-3 px-6 text-left">ID</th>
                 <th class="py-3 px-6 text-left">Área</th>
+                <th class="py-3 px-6 text-left">Orden de Servicio</th>
                 <th class="py-3 px-6 text-left">Mes</th>
                 <th class="py-3 px-6 text-left">Año</th>
                 <th class="py-3 px-6 text-left">Cantidad Total</th>
                 <th class="py-3 px-6 text-left">Cantidad Disponible</th>
+                <th class="py-3 px-6 text-left">Estado</th>
                 <th class="py-3 px-6 text-center">Acciones</th>
             </tr>
         </thead>
@@ -35,24 +37,34 @@
                 <td class="py-4 px-6">{{ reserva[3] }}</td>
                 <td class="py-4 px-6">{{ reserva[4] }}</td>
                 <td class="py-4 px-6">{{ reserva[5] }}</td>
+                <td class="py-4 px-6">{{ reserva[6] }}</td>
+                <td class="py-4 px-6"> 
+                    {% if reserva[8] == 1 %}
+                    <span class="text-green-500 font-bold">Activo</span>
+                    {% else %}
+                        <span class="text-red-500 font-bold">Inactivo</span>
+                    {% endif %}
+                </td>
                 <td class="py-4 px-6 flex justify-center gap-4">
                     <!-- Botón para abrir el modal de edición -->
                     <button onclick="abrirModalEditar(this)" 
                     data-id="{{ reserva[0] }}" 
-                    data-area_id="{{ reserva[6] }}" 
-                    data-mes="{{ reserva[2] }}" 
-                    data-year="{{ reserva[3] }}" 
-                    data-cantidad_total="{{ reserva[4] }}" 
-                    data-cantidad_disponible="{{ reserva[5] }}"
+                    data-area_id="{{ reserva[7] }}" 
+                    data-orden_servicio="{{ reserva[2] }}"
+                    data-mes="{{ reserva[3] }}" 
+                    data-year="{{ reserva[4] }}" 
+                    data-cantidad_total="{{ reserva[5] }}" 
+                    data-cantidad_disponible="{{ reserva[6] }}"
+                    data-estado="{{ reserva[8] }}"
                     class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow text-lg">
                     ✏️ Editar
                 </button>
                 
-                    
                     <!-- Formulario para eliminar -->
                     <form action="{{ url_for('eliminar_reserva', id=reserva[0]) }}" method="POST" class="inline">
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg" 
-                            onclick="return confirm('¿Seguro que deseas eliminar esta reserva?');">🗑️ Eliminar</button>
+                        <!-- Botón para eliminar con SweetAlert2 -->
+                        <button type="button" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow text-lg"
+                        onclick="confirmDeleteReserva({{ reserva[0] }})">🗑️ Eliminar</button>
                     </form>
                 </td>
             </tr>
@@ -62,81 +74,124 @@
 </div>
 
 <!-- Modal de Crear Reserva -->
-<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-6">Crear Nueva Reserva</h2>
+<div id="modalCrear" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
 
-        <form action="{{ url_for('crear_reserva') }}" method="POST">
-            <label for="crearAreaId" class="block mb-2 font-semibold">Área:</label>
-            <select name="area_id" id="crearAreaId" class="border p-3 w-full rounded-lg mb-4" required>
-                {% for area in areas %}
-                    <option value="{{ area[0] }}">{{ area[1] }}</option>
-                {% endfor %}
-            </select>
+        <!-- Botón de cierre -->
+        <button onclick="cerrarModalCrear()" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">&times;</button>
 
-        
-            <label for="mes" class="block mb-2 font-semibold">Mes:</label>
-            <input type="number" name="mes" id="mes" min="1" max="12" class="border p-3 w-full rounded-lg mb-4" required>
-        
-            <label for="year" class="block mb-2 font-semibold">Año:</label>
-            <input type="number" name="year" id="year" min="2000" max="2100" class="border p-3 w-full rounded-lg mb-4" required>
-        
-            <label for="cantidad_total" class="block mb-2 font-semibold">Cantidad Total:</label>
-            <input type="number" step="0.01" name="cantidad_total" id="cantidad_total" class="border p-3 w-full rounded-lg mb-4" required>
-        
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Guardar</button>
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Crear Nueva Reserva</h2>
+
+        <form action="{{ url_for('crear_reserva') }}" method="POST" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="crearAreaId" class="block text-sm font-medium mb-1">Área:</label>
+                    <select name="area_id" id="crearAreaId" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                        {% for area in areas %}
+                            <option value="{{ area[0] }}">{{ area[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="orden_servicio" class="block text-sm font-medium mb-1">Orden de Servicio:</label>
+                    <input type="text" name="orden_servicio" id="orden_servicio" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
+
+                <div>
+                    <label for="mes" class="block text-sm font-medium mb-1">Mes:</label>
+                    <input type="number" name="mes" id="mes" min="1" max="12" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
+
+                <div>
+                    <label for="year" class="block text-sm font-medium mb-1">Año:</label>
+                    <input type="number" name="year" id="year" min="2000" max="2100" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="cantidad_total" class="block text-sm font-medium mb-1">Cantidad Total:</label>
+                    <input type="number" step="0.01" name="cantidad_total" id="cantidad_total" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                <button type="button" onclick="cerrarModalCrear()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">Cancelar</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">Guardar</button>
             </div>
         </form>
-        
     </div>
 </div>
-
 
 <!-- Modal de Editar Reserva -->
-<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-6">Editar Reserva</h2>
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-[85%] md:max-w-lg relative ml-auto md:ml-[200px] max-h-[90vh] overflow-y-auto">
 
-        <form id="formEditar" method="POST">
-            <!-- ID oculto -->
+        <!-- Botón de cierre -->
+        <button onclick="cerrarModalEditar()" class="absolute top-3 right-4 text-gray-600 hover:text-gray-900 text-xl">
+            &times;
+        </button>
+
+        <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-center">Editar Reserva</h2>
+
+        <form id="formEditar" method="POST" class="space-y-4">
             <input type="hidden" name="reserva_id" id="editarReservaId">
 
-            <!-- Selección del Área -->
-            <!-- Selección del Área (Modal Editar) -->
-            <label for="editarAreaId" class="block mb-2 font-semibold">Área:</label>
-            <select name="area_id" id="editarAreaId" class="border p-3 w-full rounded-lg mb-4" required>
-                {% for area in areas %}
-                    <option value="{{ area[0] }}">{{ area[1] }}</option>
-                {% endfor %}
-            </select>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="editarAreaId" class="block text-sm font-medium mb-1">Área:</label>
+                    <select name="area_id" id="editarAreaId" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                        {% for area in areas %}
+                            <option value="{{ area[0] }}">{{ area[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
+                <div>
+                    <label for="editarOrdenServicio" class="block text-sm font-medium mb-1">Orden de Servicio:</label>
+                    <input type="text" name="orden_servicio" id="editarOrdenServicio" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
 
-            <!-- Mes -->
-            <label class="block mb-2 font-semibold">Mes:</label>
-            <input type="number" name="mes" id="editarMes" min="1" max="12" class="border p-3 w-full rounded-lg mb-4" required>
+                <div>
+                    <label for="editarMes" class="block text-sm font-medium mb-1">Mes:</label>
+                    <input type="number" name="mes" id="editarMes" min="1" max="12" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
 
-            <!-- Año -->
-            <label class="block mb-2 font-semibold">Año:</label>
-            <input type="number" name="year" id="editarYear" min="2000" max="2100" class="border p-3 w-full rounded-lg mb-4" required>
+                <div>
+                    <label for="editarYear" class="block text-sm font-medium mb-1">Año:</label>
+                    <input type="number" name="year" id="editarYear" min="2000" max="2100" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
 
-            <!-- Cantidad Total -->
-            <label class="block mb-2 font-semibold">Cantidad Total:</label>
-            <input type="number" step="0.01" name="cantidad_total" id="editarCantidadTotal" class="border p-3 w-full rounded-lg mb-4" required>
+                <div>
+                    <label for="editarCantidadTotal" class="block text-sm font-medium mb-1">Cantidad Total:</label>
+                    <input type="number" step="0.01" name="cantidad_total" id="editarCantidadTotal" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
 
-            <!-- Cantidad Disponible -->
-            <label class="block mb-2 font-semibold">Cantidad Disponible:</label>
-            <input type="number" step="0.01" name="cantidad_disponible" id="editarCantidadDisponible" class="border p-3 w-full rounded-lg mb-4" required>
+                <div>
+                    <label for="editarCantidadDisponible" class="block text-sm font-medium mb-1">Cantidad Disponible:</label>
+                    <input type="number" step="0.01" name="cantidad_disponible" id="editarCantidadDisponible" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                </div>
 
-            <!-- Botones -->
-            <div class="flex justify-end gap-4">
-                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg">Cancelar</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Actualizar</button>
+                <div>
+                    <label for="editarEstado" class="block text-sm font-medium mb-1">Estado:</label>
+                    <select name="estado" id="editarEstado" class="border p-2 w-full rounded-lg focus:ring focus:ring-blue-200" required>
+                        <option value="1">Activo</option>
+                        <option value="0">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-end gap-3 mt-4">
+                <button type="button" onclick="cerrarModalEditar()" class="bg-gray-400 hover:bg-gray-500 px-4 py-2 rounded-lg w-full md:w-auto">
+                    Cancelar
+                </button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full md:w-auto">
+                    Actualizar
+                </button>
             </div>
         </form>
     </div>
 </div>
+
 
 
 <!-- Scripts para controlar los modales -->
@@ -153,32 +208,39 @@ function cerrarModalCrear() {
 }
 
 // Función para abrir el modal de edición con los datos correctos
+// Función para abrir el modal de edición con los datos correctos
 function abrirModalEditar(button) {
     // Limpia el formulario antes de llenarlo
     const formEditar = document.querySelector('#formEditar');
     formEditar.reset();
 
-    // Obtiene los atributos del botón
+    // Asegúrate de capturar todos los atributos
     const reserva = {
         id: button.getAttribute('data-id'),
         area_id: button.getAttribute('data-area_id'),
+        orden_servicio: button.getAttribute('data-orden_servicio'),
         mes: button.getAttribute('data-mes'),
         year: button.getAttribute('data-year'),
         cantidad_total: button.getAttribute('data-cantidad_total'),
-        cantidad_disponible: button.getAttribute('data-cantidad_disponible')
+        cantidad_disponible: button.getAttribute('data-cantidad_disponible'),
+        estado: button.getAttribute('data-estado')
     };
+
+    console.log("Datos de la reserva:", reserva); // Depuración
 
     // Llena los campos del formulario
     document.getElementById('editarReservaId').value = reserva.id;
+    document.getElementById('editarOrdenServicio').value = reserva.orden_servicio;
     document.getElementById('editarMes').value = reserva.mes;
     document.getElementById('editarYear').value = reserva.year;
     document.getElementById('editarCantidadTotal').value = reserva.cantidad_total;
     document.getElementById('editarCantidadDisponible').value = reserva.cantidad_disponible;
+    document.getElementById('editarEstado').value = reserva.estado;
 
     // Seleccionar el área correcta en el `select`
     const areaSelect = document.getElementById('editarAreaId');
     Array.from(areaSelect.options).forEach(option => {
-        option.selected = option.value === reserva.area_id;
+        option.selected = option.value == reserva.area_id;
     });
 
     // Actualizar el action del formulario
@@ -188,6 +250,7 @@ function abrirModalEditar(button) {
     document.getElementById('modalEditar').classList.remove('hidden');
 }
 
+
 // Función para cerrar el modal de edición y limpiar el formulario
 function cerrarModalEditar() {
     document.getElementById('modalEditar').classList.add('hidden');
@@ -195,6 +258,48 @@ function cerrarModalEditar() {
 }
 
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmDeleteReserva(id) {
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Si hay registros ligados, solo se desactivará.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/reservas/eliminar/${id}`, { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);  // 👈 Agregar esto para ver la respuesta
+                    if (data.success) {
+                        Swal.fire({
+                            title: "Éxito",
+                            text: data.message,
+                            icon: "success",
+                            timer: 2000
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire("Error", data.message || "Hubo un problema con la eliminación", "error");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud:", error);  // 👈 Captura errores de red
+                    Swal.fire("Error", "Hubo un problema con la eliminación", "error");
+                });
+            
+            }
+        });
+    }
+</script>
+
 
 </div>
 {% endblock %}

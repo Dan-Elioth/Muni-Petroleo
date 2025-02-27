@@ -1,14 +1,28 @@
-<header class="fixed top-0 left-0 w-full bg-blue-800 text-white flex items-center justify-between h-14 z-50 shadow-lg">
+<header class="fixed top-0 left-0 w-full bg-blue-800 text-white flex items-center justify-between h-16 md:h-24 z-50 shadow-lg mr-10">
     <!-- Logo y nombre de usuario -->
-    <div class="flex items-center pl-3 w-14 md:w-64 h-14">
-      <img
-        class="w-8 h-8 md:w-10 md:h-10 rounded-md mr-2"
-        src="https://therminic2018.eu/wp-content/uploads/2018/07/dummy-avatar.jpg"
-        alt="Avatar"
-      />
-      <span class="hidden md:block font-semibold">{{ current_user.username }}</span>
-    </div>
+<!-- Logo y nombre de usuario -->
+<div class="flex items-center pl-3 w-18 md:w-64 h-14 gap-5">
+    <!-- Avatar -->
+    <img
+      class="w-8 h-8 md:w-10 md:h-10 rounded-md mr-2"
+      src="https://portal.munidesaguadero.gob.pe/wp-content/uploads/2025/02/desaguadero-peru.png"
+      alt="Avatar"
+    />
   
+    <!-- Información del usuario -->
+    <div class="hidden md:flex flex-col justify-center">
+      <!-- Nombre completo -->
+      <span class="font-semibold">{{ current_user.nombres }} {{ current_user.apellido_paterno }} {{ current_user.apellido_materno }}</span>
+  
+      <!-- Área y Rol en columnas -->
+      <div class="flex space-x-4 mt-1">
+        <p class="text-sm text-gray-300">{{ current_user.area_nombre }}</p>
+        <p class="text-sm text-gray-400">ROL: {{ current_user.rol_nombre }}</p>
+      </div>
+    </div>
+  </div>
+  
+      
     <!-- Buscador y acciones -->
     <div class="flex items-center h-full pr-4 space-x-6">
       <!-- Buscador -->
@@ -31,10 +45,7 @@
         />
       </div>
   
-      <!-- Botón para cambiar tema -->
-      <button id="toggle-theme" class="hover:text-blue-300 transition-colors">
-        Cambiar Tema
-      </button>
+
   
       <!-- Logout con icono -->
       <a href="{{ url_for('logout') }}" class="hover:text-blue-300 transition-colors flex items-center space-x-1">

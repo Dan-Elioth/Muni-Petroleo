@@ -3,5 +3,249 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-  <h1 class="text-3xl">Bienvenido al Dashboard</h1>
+  <h1 class="text-3xl px-10">Bienvenido al Dashboard</h1>
+  <div class="mt-12 px-10">
+    <div class="mb-12 grid gap-y-10 gap-x-6 md:grid-cols-2 xl:grid-cols-4">
+      <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
+        <div class="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-blue-600 to-blue-400 text-white shadow-blue-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="w-6 h-6 text-white">
+            <path d="M6 2a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8.828a2 2 0 00-.586-1.414l-4.828-4.828A2 2 0 0013.172 2H6zm7 1.414L18.586 9H13V3.414zM8 12a1 1 0 011-1h6a1 1 0 110 2H9a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+        </svg>
+        
+        </div>
+        <div class="p-4 text-right">
+          <p class="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Total de registros</p>
+          <h4 class="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{{ total_registros }}</h4>
+        </div>
+        <div class="border-t border-blue-gray-50 p-4">
+          <p class="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600">
+            <strong class="text-green-500">+55%</strong>&nbsp;than last week
+          </p>
+        </div>
+      </div>
+      <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
+        <div class="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-green-600 to-green-400 text-white shadow-green-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M16,6l3,4h2c1.11,0,2,0.89,2,2v3h-2c0,1.66-1.34,3-3,3s-3-1.34-3-3H9c0,1.66-1.34,3-3,3s-3-1.34-3-3H1v-3c0-1.11,0.89-2,2-2l3-4H16 M10.5,7.5H6.75L4.86,10h5.64V7.5 M12,7.5V10h5.14l-1.89-2.5H12 M6,13.5c-0.83,0-1.5,0.67-1.5,1.5s0.67,1.5,1.5,1.5s1.5-0.67,1.5-1.5S6.83,13.5,6,13.5 M18,13.5c-0.83,0-1.5,0.67-1.5,1.5s0.67,1.5,1.5,1.5s1.5-0.67,1.5-1.5S18.83,13.5,18,13.5z"/>
+        </svg>        
+        </div>
+        <div class="p-4 text-right">
+          <p class="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Vehiculos</p>
+          <h4 class="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{{ total_vehiculos }}</h4>
+        </div>
+        <div class="border-t border-blue-gray-50 p-4">
+          <p class="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600">
+            <strong class="text-red-500">-2%</strong>&nbsp;than yesterday
+          </p>
+        </div>
+      </div>
+      <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
+        <div class="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-orange-600 to-orange-400 text-white shadow-orange-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="w-6 h-6 text-white">
+            <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"></path>
+          </svg>
+        </div>
+        <div class="p-4 text-right">
+          <p class="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Reservas</p>
+          <h4 class="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{{ total_reservas }}</h4>
+        </div>
+        <div class="border-t border-blue-gray-50 p-4">
+          <p class="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600">
+            <strong class="text-green-500">+5%</strong>&nbsp;than yesterday
+          </p>
+        </div>
+      </div>
+      <div class="relative flex flex-col bg-clip-border rounded-xl bg-white text-gray-700 shadow-md">
+        <div class="bg-clip-border mx-4 rounded-xl overflow-hidden bg-gradient-to-tr from-pink-600 to-pink-400 text-white shadow-pink-500/40 shadow-lg absolute -mt-4 grid h-16 w-16 place-items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="w-6 h-6 text-white">
+            <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div class="p-4 text-right">
+          <p class="block antialiased font-sans text-sm leading-normal font-normal text-blue-gray-600">Total Users</p>
+          <h4 class="block antialiased tracking-normal font-sans text-2xl font-semibold leading-snug text-blue-gray-900">{{ total_usuarios }}</h4>
+        </div>
+        <div class="border-t border-blue-gray-50 p-4">
+          <p class="block antialiased font-sans text-base leading-relaxed font-normal text-blue-gray-600">
+            <strong class="text-green-500">+3%</strong>&nbsp;than last month
+          </p>
+        </div>
+      </div>
+      
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <!-- Sección de la tabla -->
+      <div class="bg-white p-6 rounded-lg shadow-lg overflow-hidden">
+        <!-- Consumo de Combustible -->
+        <h6 class="text-2xl font-semibold text-blue-gray-900 mb-6">Cantidad de Registro por Área</h6>
+        
+        <!--<p class="text-sm text-blue-gray-600 mb-6 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" aria-hidden="true" class="h-4 w-4 text-blue-500">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
+          </svg>
+          <strong>30 completados</strong> este mes
+        </p> -->
+      
+        <!-- Tabla: Consumo por Área -->
+        <div class="overflow-x-auto mb-10">
+          <table class="w-full min-w-[540px] table-auto border-collapse">
+            <thead class="bg-blue-gray-50">
+              <tr>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Área</th>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Total de Registros</th>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Porcentaje de Registros</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for area, total_registros, porcentaje in registros_con_porcentaje %}
+              <tr>
+                <td class="py-4 px-4 border-b text-blue-gray-800">{{ area }}</td>
+                <td class="py-4 px-4 border-b">{{ total_registros }}</td>
+                <td class="py-4 px-4 border-b">
+                  <div class="relative w-full bg-blue-gray-100 rounded-full h-3">
+                    <div class="absolute top-0 left-0 h-3 bg-blue-500 rounded-full" style="width: {{ porcentaje }}%;"></div>
+                  </div>
+                  <p class="text-sm mt-2">{{ porcentaje }}%</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      
+        <!-- Cantidad de Registros -->
+        <h6 class="text-2xl font-semibold text-blue-gray-900 mb-6">Cantidad Consumida por Área</h6>
+      
+        <!-- Tabla: Cantidad Consumida -->
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[540px] table-auto border-collapse">
+            <thead class="bg-blue-gray-50">
+              <tr>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Área</th>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Cantidad Consumida (L)</th>
+                <th class="py-4 px-4 text-left text-sm font-semibold text-blue-gray-600">Porcentaje de Consumo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for area, total_consumido, porcentaje in consumo_con_porcentaje %}
+              <tr>
+                <td class="py-4 px-4 border-b text-blue-gray-800">{{ area }}</td>
+                <td class="py-4 px-4 border-b">{{ total_consumido|round(2) }}</td>
+                <td class="py-4 px-4 border-b">
+                  <div class="relative w-full bg-blue-gray-100 rounded-full h-3">
+                    <div class="absolute top-0 left-0 h-3 bg-blue-500 rounded-full" style="width: {{ porcentaje }}%;"></div>
+                  </div>
+                  <p class="text-sm mt-2">{{ porcentaje }}%</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Sección del gráfico -->
+      <div class=" p-6 rounded-lg shadow-lg items-center">
+        <h2 class="text-2xl font-bold text-yellow-700 mb-4 text-center">Reservas de Combustible del Mes Actual</h2>
+        <canvas id="fuelChart" class=" w-full h-auto"></canvas>
+      </div>
+    </div>
+    
+    
+    </div>
+    
+    
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let fuelChart;
+
+    async function loadFuelChart() {
+        try {
+            const response = await fetch('/graficos/cantidad_mes_actual');
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            // Validar si hay datos disponibles
+            if (data.length === 0) {
+                console.warn("No hay reservas para el mes actual.");
+                return;
+            }
+
+            // Construir las etiquetas: "Área - Orden (Mes)"
+            const labels = data.map(item => `${item.area_nombre} - ${item.orden_servicio} (${item.mes})`);
+            const cantidadTotal = data.map(item => item.cantidad_total);
+            const cantidadDisponible = data.map(item => item.cantidad_disponible);
+
+            // Si el gráfico ya existe, actualizarlo
+            if (fuelChart) {
+                fuelChart.data.labels = labels;
+                fuelChart.data.datasets[0].data = cantidadTotal;
+                fuelChart.data.datasets[1].data = cantidadDisponible;
+                fuelChart.update();
+            } else {
+                // Crear el gráfico
+                const ctx = document.getElementById('fuelChart').getContext('2d');
+                fuelChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Cantidad Total',
+                                data: cantidadTotal,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Cantidad Disponible',
+                                data: cantidadDisponible,
+                                backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Cantidad (litros)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Reservas por Área y Orden'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.dataset.label}: ${context.raw} litros`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar los datos:', error);
+        }
+    }
+
+    // Cargar el gráfico al cargar la página
+    document.addEventListener('DOMContentLoaded', loadFuelChart);
+</script>
+
 {% endblock %}

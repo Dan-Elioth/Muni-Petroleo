@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Consumo de Combustible</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4CAF50;
+        }
+
+        .logo {
+            width: 120px;
+        }
+
+        .title {
+            text-align: center;
+            flex-grow: 1;
+            font-size: 24px;
+            color: #4CAF50;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 16px;
+            margin-top: -10px;
+            color: #777;
+        }
+
+        .table-container {
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color:rgb(86, 123, 88);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <img class="logo" src="https://portal.munidesaguadero.gob.pe/wp-content/uploads/2024/11/desaguadero_peru-removebg-preview-1.png" alt="Municipalidad Desaguadero">
+        <div class="title">Reporte de Consumo de Combustible</div>
+    </div>
+
+    <p class="subtitle">Generado el: {{ fecha_actual }}</p>
+
+    <!-- Tabla de detalles -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Área</th>
+                    <th>Usuario</th>
+                    <th>Vehículo</th>
+                    <th>Mes</th>
+                    <th>Cantidad (L)</th>
+                    <th>Fecha de Actualización</th>
+                    <th>Reservas Consumidas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in detalles_consumo %}
+                <tr>
+                    <td>{{ detalle[0] }}</td>
+                    <td>{{ detalle[1] }}</td>
+                    <td>{{ detalle[2] }}</td>
+                    <td>{{ detalle[3] }}</td>
+                    <td>{{ detalle[4] }}</td>
+                    <td>{{ detalle[6].strftime('%d-%m-%Y') }}</td>
+                    <td>{{ detalle[7] or 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        Municipalidad Distrital de Desaguadero - {{ fecha_actual.strftime('%Y') }}
+    </div>
+
+</body>
+
+</html>

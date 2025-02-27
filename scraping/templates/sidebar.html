@@ -1,5 +1,5 @@
 <div
-  class="fixed flex flex-col top-14 left-0 w-14 hover:w-64 md:w-64 bg-blue-900 h-full text-white transition-all duration-300 border-none z-10 sidebar"
+  class="fixed flex flex-col xl:mt-10 lg:mt-10 md:mt-10 sm:mt-1 left-0 w-14 hover:w-64 md:w-64 bg-blue-900 h-full text-white transition-all duration-300 border-none z-10 sidebar"
 >
   <div
     class="overflow-y-auto overflow-x-hidden flex flex-col justify-between flex-grow"
@@ -14,9 +14,9 @@
       </li>
       <li>
         <a
-          href="#"
-          class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6"
-        >
+        href="{{ url_for('home') }}"
+        class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6 {% if request.path == url_for('home') %}bg-blue-800 border-blue-500{% endif %}"
+      >
           <span class="inline-flex justify-center items-center ml-4">
             <svg
               class="w-5 h-5"
@@ -34,34 +34,6 @@
             </svg>
           </span>
           <span class="ml-2 text-sm tracking-wide truncate">Dashboard</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6"
-        >
-          <span class="inline-flex justify-center items-center ml-4">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              ></path>
-            </svg>
-          </span>
-          <span class="ml-2 text-sm tracking-wide truncate">Board</span>
-          <span
-            class="hidden md:block px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-blue-500 bg-indigo-50 rounded-full"
-            >New</span
-          >
         </a>
       </li>
       <li>
@@ -86,6 +58,34 @@
             </svg>
           </span>
           <span class="ml-2 text-sm tracking-wide truncate">Registro</span>
+        </a>
+      </li>
+      <li>
+        <a
+          href="{{ url_for('detalles_consumo') }}"
+          class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6 {% if request.path == url_for('detalles_consumo') %}bg-blue-800 border-blue-500{% endif %}"
+        >
+          <span class="inline-flex justify-center items-center ml-4">
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              ></path>
+            </svg>
+          </span>
+          <span class="ml-2 text-sm tracking-wide truncate">Reportes</span>
+          <span
+            class="hidden md:block px-2 py-0.5 ml-auto text-xs font-medium tracking-wide text-blue-500 bg-indigo-50 rounded-full"
+            >New</span
+          >
         </a>
       </li>
       <li>
@@ -116,6 +116,7 @@
           >
         </a>
       </li>
+      {% if current_user.role_id == 1 %}
       <li class="px-5 hidden md:block">
         <div class="flex flex-row items-center mt-5 h-8">
           <div class="text-sm font-light tracking-wide text-gray-400 uppercase">
@@ -123,30 +124,7 @@
           </div>
         </div>
       </li>
-      <li>
-        <a
-          href="#"
-          class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6"
-        >
-          <span class="inline-flex justify-center items-center ml-4">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              ></path>
-            </svg>
-          </span>
-          <span class="ml-2 text-sm tracking-wide truncate">Profile</span>
-        </a>
-      </li>
+  
       <li>
         <a
           href="{{ url_for('roles') }}"
@@ -154,23 +132,22 @@
         >
           <span class="inline-flex justify-center items-center ml-4">
             <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              ></path>
-            </svg>
+            class="w-5 h-5"
+            fill="currentColor"
+            viewBox="0 0 52 52"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M38.3,27.2A11.4,11.4,0,1,0,49.7,38.6,11.46,11.46,0,0,0,38.3,27.2Zm2,12.4a2.39,2.39,0,0,1-.9-.2l-4.3,4.3a1.39,1.39,0,0,1-.9.4,1,1,0,0,1-.9-.4,1.39,1.39,0,0,1,0-1.9l4.3-4.3a2.92,2.92,0,0,1-.2-.9,3.47,3.47,0,0,1,3.4-3.8,2.39,2.39,0,0,1,.9.2c.2,0,.2.2.1.3l-2,1.9a.28.28,0,0,0,0,.5L41.1,37a.38.38,0,0,0,.6,0l1.9-1.9c.1-.1.4-.1.4.1a3.71,3.71,0,0,1,.2.9A3.57,3.57,0,0,1,40.3,39.6Z"></path>
+            <circle cx="21.7" cy="14.9" r="12.9"></circle>
+            <path d="M25.2,49.8c2.2,0,1-1.5,1-1.5h0a15.44,15.44,0,0,1-3.4-9.7,15,15,0,0,1,1.4-6.4.77.77,0,0,1,.2-.3c.7-1.4-.7-1.5-.7-1.5h0a12.1,12.1,0,0,0-1.9-.1A19.69,19.69,0,0,0,2.4,47.1c0,1,.3,2.8,3.4,2.8H24.9C25.1,49.8,25.1,49.8,25.2,49.8Z"></path>
+          </svg>
+          
           </span>
           <span class="ml-2 text-sm tracking-wide truncate">Roles</span>
         </a>
       </li>
+   
+      
       <li>
         <a
           href="{{ url_for('usuarios') }}"
@@ -178,19 +155,15 @@
         >
           <span class="inline-flex justify-center items-center ml-4">
             <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              ></path>
-            </svg>
+            class="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17.0004C21 15.7702 19.7659 14.7129 18 14.25M3 17.0004C3 15.7702 4.2341 14.7129 6 14.25M18 10.2361C18.6137 9.68679 19 8.8885 19 8C19 6.34315 17.6569 5 16 5C15.2316 5 14.5308 5.28885 14 5.76389M6 10.2361C5.38625 9.68679 5 8.8885 5 8C5 6.34315 6.34315 5 8 5C8.76835 5 9.46924 5.28885 10 5.76389M12 14C10.3431 14 9 12.6569 9 11C9 9.34315 10.3431 8 12 8C13.6569 8 15 9.34315 15 11C15 12.6569 13.6569 14 12 14Z" 
+              stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            </path>
+          </svg>
           </span>
           <span class="ml-2 text-sm tracking-wide truncate">Usuarios</span>
         </a>
@@ -202,19 +175,81 @@
         >
           <span class="inline-flex justify-center items-center ml-4">
             <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            version="1.1"
+            id="Icons"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 0 32 32"
+            xml:space="preserve"
+            class="w-5 h-5"
+          >
+            <g id="SVGRepo_iconCarrier">
               <path
+                d="M28,30H4c-1.1,0-2-0.9-2-2V4c0-1.1,0.9-2,2-2h24c1.1,0,2,0.9,2,2v24C30,29.1,29.1,30,28,30z"
+                stroke="#FFFFFF"
+                stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                fill="none"
               ></path>
-            </svg>
+              <line
+                x1="20"
+                y1="2"
+                x2="20"
+                y2="30"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></line>
+              <polyline
+                points="27,24 25,26 23,24"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              ></polyline>
+              <polyline
+                points="23,8 25,6 27,8"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              ></polyline>
+              <line
+                x1="6"
+                y1="9"
+                x2="16"
+                y2="9"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></line>
+              <line
+                x1="6"
+                y1="13"
+                x2="12"
+                y2="13"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></line>
+              <line
+                x1="6"
+                y1="17"
+                x2="12"
+                y2="17"
+                stroke="#FFFFFF"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></line>
+            </g>
+          </svg>
           </span>
           <span class="ml-2 text-sm tracking-wide truncate">Areas</span>
         </a>
@@ -224,22 +259,22 @@
           href="{{ url_for('listar_reservas') }}"
           class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6 {% if request.path == url_for('listar_reservas') %}bg-blue-800 border-blue-500{% endif %}"
         >
-          <span class="inline-flex justify-center items-center ml-4">
+        <span class="inline-flex justify-center items-center ml-4">
             <svg
               class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              fill="white"
+              viewBox="0 0 36 36"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              ></path>
+              <title>fuel-line</title>
+              <path d="M20.12,34H5.9A2.81,2.81,0,0,1,3,31.19V4.86A2.9,2.9,0,0,1,6,2.07H20.22A2.72,2.72,0,0,1,23,4.86V31.19A2.82,2.82,0,0,1,20.12,34ZM5.9,4A.87.87,0,0,0,5,4.86V31.19a.87.87,0,0,0,.87.87H20.12a.94.94,0,0,0,.95-.87V4.86A.94.94,0,0,0,20.12,4Z"></path>
+              <path d="M29.53,34A3.5,3.5,0,0,1,26,30.5V23a2,2,0,0,0-2-2H22.57a1,1,0,0,1,0-2H24a4,4,0,0,1,4,4V30.5a1.5,1.5,0,0,0,3,0V17.3l-3.13-7A2.29,2.29,0,0,0,25.8,9h-.73a1,1,0,1,1,0-2h.73a4.3,4.3,0,0,1,3.93,2.55l3.21,7.16a1,1,0,0,1,.09.41V30.5A3.5,3.5,0,0,1,29.53,34Z"></path>
+              <path d="M18,9H8A1,1,0,1,1,8,7H18a1,1,0,0,1,0,2Z"></path>
+              <path d="M18,13H8A1,1,0,1,1,8,11H18A1,1,0,1,1,18,13Z"></path>
+              <path d="M25,12.08a1,1,0,0,1-1-1v-6a1,1,0,0,1,2,0v6A1,1,0,0,1,25,12.08Z"></path>
             </svg>
           </span>
+          
           <span class="ml-2 text-sm tracking-wide truncate">Reservas</span>
         </a>
       </li>
@@ -249,57 +284,29 @@
           class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6 {% if request.path == url_for('vehiculos') %}bg-blue-800 border-blue-500{% endif %}"
         >
           <span class="inline-flex justify-center items-center ml-4">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              ></path>
-            </svg>
+
+                <svg
+                  class="w-5 h-5"
+                  fill="white"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle cx="6.27" cy="15.84" r="1.91" stroke="white" stroke-width="1.91"></circle>
+                  <circle cx="17.73" cy="15.84" r="1.91" stroke="white" stroke-width="1.91"></circle>
+                  <line x1="15.82" y1="15.84" x2="8.18" y2="15.84" stroke="white" stroke-width="1.91"></line>
+                  <path d="M4.36,15.84H1.5V13a1.9,1.9,0,0,1,1.91-1.91h1L5.48,8.83A2.87,2.87,0,0,1,8,7.25h7.3A2.84,2.84,0,0,1,17.63,8.4l2,2.67h.95A1.9,1.9,0,0,1,22.5,13v2.86H19.64" stroke="white" stroke-width="1.91"></path>
+                  <line x1="4.36" y1="11.07" x2="19.64" y2="11.07" stroke="white" stroke-width="1.91"></line>
+                  <line x1="11.05" y1="7.25" x2="11.05" y2="11.07" stroke="white" stroke-width="1.91"></line>
+                </svg>
+              
           </span>
-          <span class="ml-2 text-sm tracking-wide truncate">vehiculos</span>
+          <span class="ml-2 text-sm tracking-wide truncate">Vehiculos</span>
         </a>
       </li>
-      <li>
-        <a
-          href="#"
-          class="relative flex flex-row items-center h-11 focus:outline-none hover:bg-blue-800 text-white-600 hover:text-white-800 border-l-4 border-transparent hover:border-blue-500 pr-6"
-        >
-          <span class="inline-flex justify-center items-center ml-4">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              ></path>
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              ></path>
-            </svg>
-          </span>
-          <span class="ml-2 text-sm tracking-wide truncate">Settings</span>
-        </a>
-      </li>
+      {% endif %}
     </ul>
     <p class="mb-14 px-5 py-3 hidden md:block text-center text-xs">
-      Copyright @2021
+      Copyright @2025 - Desarrollado por Dan Condori
     </p>
   </div>
 </div>
